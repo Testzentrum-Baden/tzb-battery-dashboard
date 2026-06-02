@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TZB Battery Monitoring</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--tzb:#0090a8;--tzb-dark:#006f82;--tzb-light:#e6f6f9;--gap:12px;--pad:1.2rem;}
+  body{font-family:'Inter',sans-serif;background:#f2f6f7;padding:var(--pad);}
+
+  .header{background:#fff;border-radius:10px;padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:var(--gap);border-top:4px solid var(--tzb);}
+  .logo-wrap{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  .logo-wrap img{height:38px;width:auto;}
+  .logo-sep{width:1px;height:32px;background:#e2e8f0;flex-shrink:0;}
+  .logo-title{font-size:13px;font-weight:600;color:#1a2e44;line-height:1.4;}
+  .logo-sub{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .live{display:flex;align-items:center;gap:6px;background:var(--tzb-light);border:1px solid rgba(0,144,168,0.25);padding:4px 11px;border-radius:20px;font-size:12px;font-weight:500;color:var(--tzb-dark);white-space:nowrap;}
+  .dot{width:7px;height:7px;border-radius:50%;background:#16a34a;flex-shrink:0;animation:blink 1.2s infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .test-id{font-size:11px;color:#94a3b8;}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin-bottom:var(--gap);}
+  .card{background:#fff;border-radius:10px;padding:1rem 1.1rem;border-top:3px solid var(--tzb);}
+  .card.g{border-top-color:#16a34a;} .card.a{border-top-color:#d97706;} .card.r{border-top-color:#dc2626;}
+  .clabel{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:4px;}
+  .clang{font-size:9px;color:#b0c4d4;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.8px;}
+  .cval{font-size:clamp(18px,3vw,28px);font-weight:600;color:#1a2e44;line-height:1;}
+  .cunit{font-size:12px;font-weight:400;color:#94a3b8;margin-left:2px;}
+  .csub{font-size:11px;color:#cbd5e1;margin-top:4px;}
+
+  .panel{background:#fff;border-radius:10px;padding:1.1rem 1.2rem;}
+  .ptitle{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:0.9rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
+  .ptitle-r{font-size:11px;color:var(--tzb);font-weight:500;text-transform:none;letter-spacing:0;}
+  .chart-wrap{position:relative;height:150px;}
+
+  .row-main{display:grid;grid-template-columns:1.7fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .row-charts{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
+  .irow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+  .irow:last-child{border-bottom:none;}
+  .ilabel{color:#94a3b8;} .ival{color:#1a2e44;font-weight:500;}
+  .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;}
+  .badge.ok{background:#dcfce7;color:#15803d;} .badge.warn{background:#fef9c3;color:#a16207;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:0.8rem;margin-bottom:0.7rem;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;}
+  .legend-dot{width:10px;height:3px;border-radius:2px;flex-shrink:0;}
+
+  .prog-wrap{background:#fff;border-radius:10px;padding:1.1rem 1.2rem;margin-bottom:var(--gap);}
+  .prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:0.4rem;}
+  .prog-label{display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:5px;}
+  .prog-pct{font-weight:500;color:#1a2e44;}
+  .track{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;}
+  .fill{height:100%;border-radius:3px;transition:width 0.3s ease;}
+
+  .footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:11px;color:#cbd5e1;}
+
+  /* Replay button */
+  .replay-btn{display:flex;align-items:center;gap:6px;background:var(--tzb);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.2s;}
+  .replay-btn:hover{background:var(--tzb-dark);}
+
+  @media(max-width:768px){
+    .cards{grid-template-columns:repeat(2,1fr);}
+    .row-main,.row-charts{grid-template-columns:1fr;}
+    .prog-grid{grid-template-columns:1fr;gap:0.9rem;}
+    .logo-sep{display:none;}
+  }
+  @media(max-width:480px){
+    :root{--pad:0.7rem;}
+    .header{flex-direction:column;align-items:flex-start;}
+    .header-right{align-items:flex-start;}
+    .chart-wrap{height:120px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <img src="./tzb-logo.png" alt="TZB logo"/>
+    <div class="logo-sep"></div>
+    <div>
+      <div class="logo-title">Testzentrum Baden GmbH</div>
+      <div class="logo-sub">Batterieprüfung / Battery Testing</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live"><span class="dot"></span>Messung aktiv / Measurement active &nbsp;·&nbsp; Labor 2, Rastatt</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="test-id">3162_BEM_1867_ElEnduranceHot · 2026-03-05</span>
+      <button class="replay-btn" onclick="startAnimation()">&#9654; Replay</button>
+    </div>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <span class="clang">Spannung / Voltage</span>
+    <div class="clabel">DCFC</div>
+    <div class="cval" id="volt">—<span class="cunit">V</span></div>
+    <div class="csub">Max: 500 V</div>
+  </div>
+  <div class="card g">
+    <span class="clang">Strom / Current</span>
+    <div class="clabel">EXT S1 CurSns</div>
+    <div class="cval" id="amp">—<span class="cunit">A</span></div>
+    <div class="csub">-56 ... +89 A</div>
+  </div>
+  <div class="card a">
+    <span class="clang">Temperatur / Temperature</span>
+    <div class="clabel">Kühlmittel Ein / Inlet</div>
+    <div class="cval" id="temp">—<span class="cunit">°C</span></div>
+    <div class="csub">Kammer: 50 °C</div>
+  </div>
+  <div class="card r">
+    <span class="clang">Testfortschritt / Progress</span>
+    <div class="clabel">SOC / Ladezustand</div>
+    <div class="cval" id="soc">—<span class="cunit">%</span></div>
+    <div class="csub">00:00 → 38:15</div>
+  </div>
+</div>
+
+<div class="row-main">
+  <div class="panel">
+    <div class="ptitle">
+      Spannung / Voltage — DCFC
+      <span class="ptitle-r" id="time-cursor">00:00</span>
+    </div>
+    <div class="chart-wrap"><canvas id="vcChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">Prüfparameter / Test Parameters</div>
+    <div class="irow"><span class="ilabel">Protokoll / Protocol</span><span class="ival">Endurance Hot</span></div>
+    <div class="irow"><span class="ilabel">Fahrzeug / Vehicle</span><span class="ival">BEM 1867</span></div>
+    <div class="irow"><span class="ilabel">Prüfnr. / Test No.</span><span class="ival">3162</span></div>
+    <div class="irow"><span class="ilabel">Status</span><span class="badge ok" id="status-badge">Läuft / Running</span></div>
+    <div class="irow"><span class="ilabel">Kammertemp. / Chamber</span><span class="badge warn">50 °C</span></div>
+    <div class="irow"><span class="ilabel">Dauer / Duration</span><span class="ival" id="elapsed-time">—</span></div>
+  </div>
+</div>
+
+<div class="row-charts">
+  <div class="panel">
+    <div class="ptitle">Kühlmitteltemperatur / Coolant Temperature <span class="ptitle-r">°C</span></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Eingang / Inlet</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0090a8;"></div>Ausgang / Outlet</div>
+    </div>
+    <div class="chart-wrap"><canvas id="thChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">Vibrationsspektrum / Vibration Spectrum <span class="ptitle-r">MP1_X · g</span></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>Amplitude (g) vs. Frequenz / Frequency (Hz)</div>
+    </div>
+    <div class="chart-wrap"><canvas id="vibChart"></canvas></div>
+  </div>
+</div>
+
+<div class="prog-wrap">
+  <div class="ptitle">Testfortschritt / Test Progress</div>
+  <div class="prog-grid">
+    <div>
+      <div class="prog-label"><span>Ladezustand / SOC</span><span class="prog-pct" id="p-soc">—</span></div>
+      <div class="track"><div class="fill" id="f-soc" style="width:0%;background:var(--tzb);"></div></div>
+    </div>
+    <div>
+      <div class="prog-label"><span>Spannung / Voltage</span><span class="prog-pct" id="p-volt">—</span></div>
+      <div class="track"><div class="fill" id="f-volt" style="width:0%;background:#d97706;"></div></div>
+    </div>
+    <div>
+      <div class="prog-label"><span>Zeitfortschritt / Time</span><span class="prog-pct" id="p-time">—</span></div>
+      <div class="track"><div class="fill" id="f-time" style="width:0%;background:#16a34a;"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>TZB Testzentrum Baden GmbH · Rastatt, Germany · Quelle: MDF + MAT</span>
+  <span>3162_BEM_1867_ElEnduranceHot_2026-03-05_15-28-07_L023</span>
+</div>
+
+<script>
+
+  const DATA = {
+    volt:  { labels: ["00:00", "00:09", "00:18", "00:27", "00:36", "00:46", "00:55", "01:04", "01:13", "01:22", "01:32", "01:41", "01:50", "01:59", "02:08", "02:18", "02:27", "02:36", "02:45", "02:54", "03:04", "03:13", "03:22", "03:31", "03:40", "03:50", "03:59", "04:08", "04:17", "04:26", "04:36", "04:45", "04:54", "05:03", "05:12", "05:22", "05:31", "05:40", "05:49", "05:58", "06:08", "06:17", "06:26", "06:35", "06:44", "06:54", "07:03", "07:12", "07:21", "07:30", "07:40", "07:49", "07:58", "08:07", "08:16", "08:26", "08:35", "08:44", "08:53", "09:02", "09:12", "09:21", "09:30", "09:39", "09:48", "09:58", "10:07", "10:16", "25:34", "25:43", "25:52", "26:01", "26:11", "26:20", "26:29", "26:38", "26:47", "26:56", "27:05", "27:14", "27:24", "27:33", "27:42", "27:51", "28:00", "28:09", "28:18", "28:27", "28:36", "28:46", "28:55", "29:04", "29:13", "29:22", "29:31", "29:40", "29:49", "29:59", "30:08", "30:17", "30:26", "30:35", "30:45", "30:54", "31:03", "31:12", "31:21", "31:31", "31:40", "31:49", "31:58", "32:07", "32:17", "32:26", "32:35", "32:44", "32:53", "33:03", "33:12", "33:21", "33:30", "33:39", "33:49", "33:58", "34:07", "34:16", "34:25", "34:35", "34:44", "34:53", "35:02", "35:11", "35:21", "35:30", "35:39", "35:48", "35:57", "36:07", "36:16", "36:25", "36:34", "36:43", "36:53", "37:02", "37:11", "37:20", "37:29", "37:39", "37:48", "37:57", "38:06", "38:15"],  values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 497.76, 495.36, 492.97, 490.57, 488.18, 485.78, 483.39, 480.99, 478.59, 476.2, 473.8, 471.41, 469.01, 466.61, 464.22, 461.82, 459.43, 457.03, 454.64, 452.24, 449.84, 447.45, 445.05, 442.66, 440.26, 437.86, 435.47, 433.07, 430.68, 428.28, 425.89, 423.49, 421.09, 418.7, 416.3] },
+    curr:  { labels: ["00:00", "00:15", "00:30", "00:45", "01:01", "01:16", "01:31", "01:47", "02:02", "02:17", "02:33", "02:48", "03:03", "03:18", "03:34", "03:49", "04:04", "04:20", "04:35", "04:50", "05:06", "05:21", "05:36", "05:51", "06:07", "06:22", "06:37", "06:53", "07:08", "07:23", "07:39", "07:54", "08:09", "08:24", "08:40", "08:55", "09:10", "09:26", "09:41", "09:56", "10:12", "10:27", "10:42", "10:57", "11:13", "11:28", "11:43", "11:59", "12:14", "12:29", "12:45", "13:00", "13:15", "13:30", "13:46", "14:01", "14:16", "14:32", "14:47", "15:02", "15:18", "15:33", "15:48", "16:03", "16:19", "16:34", "16:49", "17:05", "17:20", "17:35", "17:51", "18:06", "18:21", "18:36", "18:52", "19:07", "19:22", "19:38", "19:53", "20:08", "20:24", "20:39", "20:54", "21:09", "21:25", "21:40", "21:55", "22:11", "22:26", "22:41", "22:57", "23:12", "23:27", "23:42", "23:58", "24:13", "24:28", "24:44", "24:59", "25:14", "25:30", "25:45", "26:00", "26:15", "26:31", "26:46", "27:01", "27:17", "27:32", "27:47", "28:03", "28:18", "28:33", "28:48", "29:04", "29:19", "29:34", "29:50", "30:05", "30:20", "30:36", "30:51", "31:06", "31:21", "31:37", "31:52", "32:07", "32:23", "32:38", "32:53", "33:09", "33:24", "33:39", "33:54", "34:10", "34:25", "34:40", "34:56", "35:11", "35:26", "35:42", "35:57", "36:12", "36:27", "36:43", "36:58", "37:13", "37:29", "37:44", "37:59", "38:15"],  values: [29.06, 15.1, 14.08, 24.06, 7.04, -0.9, -13.95, 33.02, 6.02, -28.93, 62.08, -5.89, -39.94, 46.08, 25.09, 29.06, 29.06, 47.1, 23.04, 5.12, 10.11, 5.12, 2.05, -11.9, 3.07, -0.9, -23.94, 10.11, 23.04, -10.88, 30.08, 6.02, 28.03, 14.08, 0.0, 20.1, 0.0, 56.06, -6.91, 3.07, 3.07, 32.0, 10.11, 0.0, 32.0, 30.08, -9.98, 24.06, 26.11, 20.1, 1.02, -9.98, 6.02, 19.07, 25.09, 14.08, 43.01, 37.12, 8.06, 14.08, -6.91, 19.07, 12.03, 56.06, 42.11, 62.08, 20.1, 15.1, -2.94, 29.06, 16.0, 30.08, 43.01, -7.94, 43.01, 24.06, 28.03, 0.0, -6.91, 14.08, 23.04, 2.05, 28.03, 28.03, 38.02, 11.01, 39.04, 70.02, 12.03, 20.1, 34.05, 20.1, 5.12, 16.0, -14.98, 24.06, 44.03, 24.06, 30.08, -23.94, 14.08, 14.08, 19.07, 21.12, 21.12, 17.02, 16.0, 46.08, 21.12, -0.9, 14.08, -13.95, 43.01, 44.03, -0.9, -4.99, 42.11, 16.0, 3.07, -1.92, -14.98, 32.0, 14.08, -29.95, 12.03, 37.12, 21.12, 61.06, 11.01, 23.04, 34.05, -38.91, 24.06, -1.92, 2.05, 19.07, 11.01, 7.04, -0.9, 3.07, 69.12, 5.12, 11.01, 34.05, -7.94, -2.94, -1.92, 23.04, 10.11, 0.0, 32.0] },
+    temp1: { labels: ["00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:01", "02:16", "02:31", "02:46", "03:01", "03:16", "03:31", "03:47", "04:02", "04:17", "04:32", "04:47", "05:02", "05:17", "05:32", "05:48", "06:03", "06:18", "06:33", "06:48", "07:03", "07:18", "07:34", "07:49", "08:04", "08:19", "08:34", "08:49", "09:04", "09:19", "09:35", "09:50", "10:05", "10:20", "10:35", "10:50", "11:05", "11:21", "11:36", "11:51", "12:06", "12:21", "12:36", "12:51", "13:06", "13:22", "13:37", "13:52", "14:07", "14:22", "14:37", "14:52", "15:08", "15:23", "15:38", "15:53", "16:08", "16:23", "16:38", "16:54", "17:09", "17:24", "17:39", "17:54", "18:09", "18:24", "18:39", "18:55", "19:10", "19:25", "19:40", "19:55", "20:10", "20:25", "20:41", "20:56", "21:11", "21:26", "21:41", "21:56", "22:11", "22:26", "22:42", "22:57", "23:12", "23:27", "23:42", "23:57", "24:12", "24:28", "24:43", "24:58", "25:13", "25:28", "25:43", "25:58", "26:13", "26:29", "26:44", "26:59", "27:14", "27:29", "27:44", "27:59", "28:15", "28:30", "28:45", "29:00", "29:15", "29:30", "29:45", "30:00", "30:16", "30:31", "30:46", "31:01", "31:16", "31:31", "31:46", "32:02", "32:17", "32:32", "32:47", "33:02", "33:17", "33:32", "33:47", "34:03", "34:18", "34:33", "34:48", "35:03", "35:18", "35:33", "35:49", "36:04", "36:19", "36:34", "36:49", "37:04", "37:19", "37:34", "37:50", "38:05"], values: [50.71, 50.67, 50.67, 50.71, 50.71, 50.67, 50.67, 50.71, 50.67, 50.67, 50.71, 50.64, 50.67, 50.67, 50.75, 50.71, 50.67, 50.75, 50.67, 50.67, 50.67, 50.71, 50.71, 50.67, 50.64, 50.71, 50.71, 50.67, 50.67, 50.67, 50.64, 50.71, 50.71, 50.67, 50.75, 50.64, 50.67, 50.64, 50.67, 50.64, 50.6, 50.64, 50.71, 50.64, 50.64, 50.67, 50.71, 50.67, 50.67, 50.67, 50.67, 50.71, 50.67, 50.67, 50.67, 50.75, 50.67, 50.71, 50.67, 50.67, 50.71, 50.71, 50.67, 50.71, 50.67, 50.75, 50.71, 50.71, 50.67, 50.75, 50.67, 50.64, 50.67, 50.67, 50.67, 50.67, 50.67, 50.67, 50.64, 50.6, 50.67, 50.71, 50.64, 50.64, 50.67, 50.6, 50.71, 50.64, 50.67, 50.67, 50.64, 50.64, 50.67, 50.67, 50.75, 50.67, 50.71, 50.67, 50.64, 50.64, 50.71, 50.75, 50.64, 50.67, 50.67, 50.67, 50.67, 50.67, 50.71, 50.67, 50.67, 50.67, 50.67, 50.64, 50.67, 50.71, 50.67, 50.64, 50.71, 50.67, 50.71, 50.64, 50.71, 50.67, 50.67, 50.67, 50.71, 50.67, 50.64, 50.67, 50.71, 50.71, 50.67, 50.71, 50.67, 50.67, 50.67, 50.64, 50.67, 50.71, 50.64, 50.64, 50.71, 50.67, 50.6, 50.67, 50.71, 50.75, 50.67, 50.67, 50.64, 50.67]  },
+    temp2: { labels: ["00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:01", "02:16", "02:31", "02:46", "03:01", "03:16", "03:31", "03:47", "04:02", "04:17", "04:32", "04:47", "05:02", "05:17", "05:32", "05:48", "06:03", "06:18", "06:33", "06:48", "07:03", "07:18", "07:34", "07:49", "08:04", "08:19", "08:34", "08:49", "09:04", "09:19", "09:35", "09:50", "10:05", "10:20", "10:35", "10:50", "11:05", "11:21", "11:36", "11:51", "12:06", "12:21", "12:36", "12:51", "13:06", "13:22", "13:37", "13:52", "14:07", "14:22", "14:37", "14:52", "15:08", "15:23", "15:38", "15:53", "16:08", "16:23", "16:38", "16:54", "17:09", "17:24", "17:39", "17:54", "18:09", "18:24", "18:39", "18:55", "19:10", "19:25", "19:40", "19:55", "20:10", "20:25", "20:41", "20:56", "21:11", "21:26", "21:41", "21:56", "22:11", "22:26", "22:42", "22:57", "23:12", "23:27", "23:42", "23:57", "24:12", "24:28", "24:43", "24:58", "25:13", "25:28", "25:43", "25:58", "26:13", "26:29", "26:44", "26:59", "27:14", "27:29", "27:44", "27:59", "28:15", "28:30", "28:45", "29:00", "29:15", "29:30", "29:45", "30:00", "30:16", "30:31", "30:46", "31:01", "31:16", "31:31", "31:46", "32:02", "32:17", "32:32", "32:47", "33:02", "33:17", "33:32", "33:47", "34:03", "34:18", "34:33", "34:48", "35:03", "35:18", "35:33", "35:49", "36:04", "36:19", "36:34", "36:49", "37:04", "37:19", "37:34", "37:50", "38:05"], values: [48.31, 48.27, 48.27, 48.27, 48.27, 48.39, 48.31, 48.31, 48.31, 48.27, 48.35, 48.35, 48.31, 48.31, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.27, 48.31, 48.27, 48.31, 48.35, 48.24, 48.27, 48.27, 48.31, 48.27, 48.31, 48.35, 48.35, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.35, 48.35, 48.31, 48.27, 48.27, 48.35, 48.27, 48.27, 48.39, 48.35, 48.31, 48.27, 48.35, 48.27, 48.27, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.27, 48.31, 48.27, 48.31, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.31, 48.35, 48.31, 48.31, 48.31, 48.24, 48.27, 48.27, 48.27, 48.27, 48.27, 48.24, 48.27, 48.27, 48.24, 48.31, 48.24, 48.27, 48.24, 48.27, 48.27, 48.2, 48.27, 48.27, 48.24, 48.24, 48.27, 48.27, 48.31, 48.31, 48.2, 48.27, 48.24, 48.27, 48.2, 48.27, 48.24, 48.27, 48.24, 48.24, 48.24, 48.27, 48.24, 48.27, 48.27, 48.27, 48.27, 48.27, 48.24, 48.27, 48.27, 48.27, 48.31, 48.27, 48.27, 48.24, 48.27, 48.24, 48.27, 48.24, 48.24, 48.27, 48.27, 48.24, 48.27, 48.31, 48.24, 48.27, 48.24, 48.27, 48.27, 48.24, 48.24, 48.2, 48.27, 48.27, 48.16, 48.27, 48.24]  },
+    soc:   { labels: ["00:00", "00:09", "00:18", "00:27", "00:36", "00:46", "00:55", "01:04", "01:13", "01:22", "01:32", "01:41", "01:50", "01:59", "02:08", "02:18", "02:27", "02:36", "02:45", "02:54", "03:04", "03:13", "03:22", "03:31", "03:40", "03:50", "03:59", "04:08", "04:17", "04:26", "04:36", "04:45", "04:54", "05:03", "05:12", "05:22", "05:31", "05:40", "05:49", "05:58", "06:08", "06:17", "06:26", "06:35", "06:44", "06:54", "07:03", "07:12", "07:21", "07:30", "07:40", "07:49", "07:58", "08:07", "08:16", "08:26", "08:35", "08:44", "08:53", "09:02", "09:12", "09:21", "09:30", "09:39", "09:48", "09:58", "10:07", "10:16", "25:34", "25:43", "25:52", "26:01", "26:11", "26:20", "26:29", "26:38", "26:47", "26:56", "27:05", "27:14", "27:24", "27:33", "27:42", "27:51", "28:00", "28:09", "28:18", "28:27", "28:36", "28:46", "28:55", "29:04", "29:13", "29:22", "29:31", "29:40", "29:49", "29:59", "30:08", "30:17", "30:26", "30:35", "30:45", "30:54", "31:03", "31:12", "31:21", "31:31", "31:40", "31:49", "31:58", "32:07", "32:17", "32:26", "32:35", "32:44", "32:53", "33:03", "33:12", "33:21", "33:30", "33:39", "33:49", "33:58", "34:07", "34:16", "34:25", "34:35", "34:44", "34:53", "35:02", "35:11", "35:21", "35:30", "35:39", "35:48", "35:57", "36:07", "36:16", "36:25", "36:34", "36:43", "36:53", "37:02", "37:11", "37:20", "37:29", "37:39", "37:48", "37:57", "38:06", "38:15"],   values: [40.82, 41.7, 42.58, 43.46, 44.34, 45.22, 46.11, 46.99, 47.87, 48.75, 49.63, 50.51, 51.39, 52.28, 53.16, 54.04, 54.92, 55.8, 56.68, 57.56, 58.44, 59.33, 60.21, 61.09, 61.97, 62.85, 63.73, 64.61, 65.49, 66.38, 67.26, 68.14, 69.02, 69.9, 70.78, 71.66, 72.55, 73.43, 74.31, 75.19, 76.07, 76.95, 77.83, 78.71, 79.6, 80.48, 81.36, 82.24, 83.12, 84.0, 84.88, 85.76, 86.65, 87.53, 88.41, 89.29, 90.17, 91.05, 91.93, 92.82, 93.7, 94.58, 95.46, 96.34, 97.22, 98.1, 98.98, 99.87, 0.55, 1.21, 1.86, 2.51, 3.16, 3.82, 4.47, 5.12, 5.77, 6.43, 7.08, 7.73, 8.38, 9.04, 9.69, 10.34, 10.99, 11.65, 12.3, 12.95, 13.6, 14.26, 14.91, 15.56, 16.21, 16.87, 17.52, 18.17, 18.82, 19.48, 20.13, 20.78, 21.43, 22.09, 22.74, 23.39, 24.04, 24.7, 25.35, 26.0, 26.65, 27.3, 27.96, 28.61, 29.26, 29.91, 30.57, 31.22, 31.87, 32.52, 33.18, 33.83, 34.48, 35.13, 35.79, 36.44, 37.09, 37.74, 38.4, 39.05, 39.7, 40.35, 41.01, 41.66, 42.31, 42.96, 43.62, 44.27, 44.92, 45.57, 46.23, 46.88, 47.53, 48.18, 48.84, 49.49, 50.14, 50.79, 51.45, 52.1, 52.75, 53.4, 54.06, 54.71] },
+    vib:   { labels: [4.0, 4.08, 4.17, 4.25, 4.34, 4.43, 4.52, 4.61, 4.71, 4.8, 4.9, 5.0, 5.1, 5.21, 5.32, 5.43, 5.54, 5.65, 5.77, 5.89, 6.01, 6.13, 6.26, 6.38, 6.52, 6.65, 6.79, 6.92, 7.07, 7.21, 7.36, 7.51, 7.67, 7.82, 7.98, 8.15, 8.32, 8.49, 8.66, 8.84, 9.02, 9.2, 9.39, 9.59, 9.78, 9.98, 10.19, 10.4, 10.61, 10.83, 11.05, 11.28, 11.51, 11.75, 11.99, 12.23, 12.49, 12.74, 13.0, 13.27, 13.54, 13.82, 14.11, 14.4, 14.69, 14.99, 15.3, 15.61, 15.94, 16.26, 16.6, 16.94, 17.28, 17.64, 18.0, 18.37, 18.75, 19.13, 19.53, 19.93, 20.34, 20.75, 21.18, 21.62, 22.06, 22.51, 22.98, 23.45, 23.93, 24.42, 24.92, 25.43, 25.96, 26.49, 27.03, 27.59, 28.15, 28.73, 29.32, 29.92, 30.54, 31.17, 31.81, 32.46, 33.13, 33.81, 34.5, 35.21, 35.93, 36.67, 37.42, 38.19, 38.97, 39.77, 40.59, 41.43, 42.28, 43.14, 44.03, 44.93, 45.86, 46.8, 47.76, 48.74, 49.74, 50.76, 51.8, 52.87, 53.95, 55.06, 56.19, 57.35, 58.52, 59.73, 60.95, 62.2, 63.48, 64.79, 66.12, 67.47, 68.86, 70.27, 71.72, 73.19, 74.69, 76.23, 77.79, 79.39, 81.02, 82.68, 84.38, 86.11, 87.88, 89.69, 91.53, 93.41, 95.32, 97.28, 99.28, 101.32, 103.4, 105.52, 107.69, 109.9, 112.16, 114.46, 116.81, 119.21, 121.66, 124.16, 126.71, 129.31, 131.96, 134.67, 137.44, 140.26, 143.14, 146.08, 149.08, 152.14, 155.27, 158.45, 161.71, 165.03, 168.42, 171.88, 175.4, 179.01, 182.68, 186.43, 190.26, 194.17, 198.16, 202.23, 206.38, 210.62, 214.94, 219.36, 223.86, 228.46, 233.15, 237.94, 242.82, 247.81, 252.9], values: [0.01167, 0.01171, 0.01175, 0.0118, 0.01184, 0.01188, 0.01193, 0.01198, 0.01202, 0.01207, 0.01212, 0.01217, 0.01204, 0.01191, 0.01178, 0.01165, 0.01151, 0.01137, 0.01122, 0.01108, 0.0109, 0.01043, 0.00994, 0.00944, 0.00894, 0.00842, 0.00789, 0.00735, 0.00722, 0.00765, 0.00809, 0.00853, 0.00899, 0.00945, 0.00992, 0.01042, 0.01086, 0.01132, 0.01179, 0.01226, 0.01271, 0.0123, 0.01188, 0.01145, 0.01102, 0.01049, 0.01103, 0.01163, 0.01224, 0.01287, 0.01351, 0.01411, 0.01473, 0.01535, 0.01612, 0.01635, 0.01661, 0.01687, 0.01713, 0.01669, 0.01625, 0.0158, 0.01541, 0.01536, 0.01531, 0.01526, 0.01522, 0.01519, 0.01516, 0.01586, 0.01677, 0.01769, 0.01759, 0.01724, 0.01688, 0.01698, 0.01708, 0.01732, 0.01777, 0.01823, 0.01891, 0.01964, 0.01986, 0.01931, 0.01882, 0.01932, 0.01994, 0.01989, 0.01984, 0.02017, 0.02058, 0.02087, 0.02117, 0.02176, 0.02241, 0.02241, 0.02242, 0.02248, 0.02201, 0.02108, 0.02168, 0.02228, 0.02176, 0.02158, 0.02162, 0.02154, 0.02206, 0.02281, 0.02333, 0.02344, 0.02331, 0.0229, 0.02231, 0.02281, 0.02331, 0.02335, 0.02308, 0.0233, 0.02329, 0.02252, 0.0234, 0.02348, 0.02398, 0.02374, 0.03016, 0.02805, 0.02472, 0.02463, 0.02527, 0.02442, 0.02419, 0.02466, 0.0252, 0.02462, 0.0251, 0.02563, 0.02564, 0.0261, 0.02553, 0.02585, 0.02636, 0.02724, 0.02697, 0.02721, 0.02738, 0.0272, 0.02789, 0.0282, 0.02851, 0.02969, 0.02994, 0.03031, 0.03011, 0.02964, 0.03009, 0.02983, 0.03054, 0.03211, 0.03162, 0.0337, 0.03569, 0.03539, 0.03811, 0.03977, 0.04565, 0.04816, 0.04339, 0.03823, 0.03709, 0.03965, 0.04548, 0.04842, 0.05196, 0.05779, 0.06276, 0.06631, 0.07459, 0.08136, 0.08374, 0.0761, 0.06805, 0.06313, 0.05473, 0.04487, 0.0363, 0.03202, 0.02712, 0.02415, 0.02148, 0.01689, 0.01802, 0.01908, 0.0164, 0.02475, 0.02047, 0.01228, 0.02146, 0.02074, 0.03314, 0.01246, 0.01558, 0.01753, 0.02985, 0.01943, 0.00642] },
+  };
+  const TOTAL_PTS = DATA.volt.labels.length;
+
+  const G = '#f1f5f9', T = '#94a3b8';
+
+  /* ── Create charts with empty data ── */
+  function makeChart(id, datasets, scales, tooltipCb) {
+    return new Chart(document.getElementById(id).getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend:{display:false}, tooltip:{callbacks: tooltipCb||{}} },
+        scales
+      }
+    });
+  }
+
+  const vcChart = makeChart('vcChart',
+    [{ data:[], borderColor:'#0090a8', borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, backgroundColor:'rgba(0,144,168,0.07)' }],
+    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8}, grid:{color:G} },
+      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}V`}, grid:{color:G}, min:0, max:520 } },
+    { label: c => `${c.raw} V` }
+  );
+
+  const thChart = makeChart('thChart',
+    [
+      { data:[], label:'Inlet',  borderColor:'#d97706', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false },
+      { data:[], label:'Outlet', borderColor:'#0090a8', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false }
+    ],
+    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8}, grid:{color:G} },
+      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}°C`}, grid:{color:G}, min:47.5, max:51.5 } }
+  );
+
+  /* Vibration is static — animate reveal on first load */
+  const vibChart = makeChart('vibChart',
+    [{ data:[], borderColor:'#dc2626', borderWidth:1.5, pointRadius:0, tension:0.2, fill:true, backgroundColor:'rgba(220,38,38,0.05)' }],
+    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8,callback:(_,i,ticks)=>{ const v=DATA.vib.labels[i]; return i%(Math.ceil(ticks.length/6))===0?`${v}Hz`:null; }}, grid:{color:G} },
+      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}g`}, grid:{color:G}, min:0 } },
+    { title: items=>`${items[0].label} Hz`, label: c=>`${c.raw} g` }
+  );
+
+  /* ── Animation state ── */
+  let animTimer = null;
+  let step = 0;
+  const INTERVAL_MS  = 130;   // ms between points — 152pts × 130ms ≈ 20s
+  const VIB_INTERVAL = 95;    // ms between vib points — 205pts × 95ms ≈ 20s
+
+  function resetCharts() {
+    vcChart.data.labels = []; vcChart.data.datasets[0].data = [];
+    thChart.data.labels = []; thChart.data.datasets[0].data = []; thChart.data.datasets[1].data = [];
+    vibChart.data.labels = []; vibChart.data.datasets[0].data = [];
+    vcChart.update('none'); thChart.update('none'); vibChart.update('none');
+    document.getElementById('volt').innerHTML = '—<span class="cunit">V</span>';
+    document.getElementById('amp').innerHTML  = '—<span class="cunit">A</span>';
+    document.getElementById('temp').innerHTML = '—<span class="cunit">°C</span>';
+    document.getElementById('soc').innerHTML  = '—<span class="cunit">%</span>';
+    document.getElementById('time-cursor').textContent = '00:00';
+    document.getElementById('elapsed-time').textContent = '—';
+    document.getElementById('status-badge').textContent = 'Läuft / Running';
+    document.getElementById('status-badge').className = 'badge ok';
+    document.getElementById('f-soc').style.width  = '0%';
+    document.getElementById('f-volt').style.width = '0%';
+    document.getElementById('f-time').style.width = '0%';
+    document.getElementById('p-soc').textContent  = '—';
+    document.getElementById('p-volt').textContent = '—';
+    document.getElementById('p-time').textContent = '—';
+  }
+
+  function tick() {
+    if (step >= TOTAL_PTS) {
+      document.getElementById('status-badge').textContent = 'Abgeschlossen / Done';
+      document.getElementById('status-badge').className = 'badge ok';
+      clearInterval(animTimer);
+      setTimeout(startAnimation, 500);
+      return;
+    }
+
+    /* Voltage chart */
+    vcChart.data.labels.push(DATA.volt.labels[step]);
+    vcChart.data.datasets[0].data.push(DATA.volt.values[step]);
+    vcChart.update('none');
+
+    /* Temp chart */
+    const ti = Math.min(step, DATA.temp1.values.length - 1);
+    thChart.data.labels.push(DATA.temp1.labels[ti]);
+    thChart.data.datasets[0].data.push(DATA.temp1.values[ti]);
+    thChart.data.datasets[1].data.push(DATA.temp2.values[ti]);
+    thChart.update('none');
+
+    /* Update KPI cards */
+    const vi = Math.min(step, DATA.volt.values.length - 1);
+    const ci = Math.min(step, DATA.curr.values.length - 1);
+    const si = Math.min(step, DATA.soc.values.length - 1);
+
+    document.getElementById('volt').innerHTML = `${DATA.volt.values[vi].toFixed(0)}<span class="cunit">V</span>`;
+    document.getElementById('amp').innerHTML  = `${DATA.curr.values[ci].toFixed(1)}<span class="cunit">A</span>`;
+    document.getElementById('temp').innerHTML = `${DATA.temp1.values[ti].toFixed(1)}<span class="cunit">°C</span>`;
+    document.getElementById('soc').innerHTML  = `${DATA.soc.values[si].toFixed(0)}<span class="cunit">%</span>`;
+    document.getElementById('time-cursor').textContent = DATA.volt.labels[vi];
+    document.getElementById('elapsed-time').textContent = DATA.volt.labels[vi] + ' min';
+
+    /* Progress bars */
+    const pct = Math.round((step / (TOTAL_PTS-1)) * 100);
+    const socPct = Math.round(DATA.soc.values[si]);
+    const voltPct = Math.round((DATA.volt.values[vi] / 500) * 100);
+
+    document.getElementById('f-soc').style.width  = socPct + '%';
+    document.getElementById('f-volt').style.width = voltPct + '%';
+    document.getElementById('f-time').style.width = pct + '%';
+    document.getElementById('p-soc').textContent  = socPct + ' %';
+    document.getElementById('p-volt').textContent = DATA.volt.values[vi].toFixed(0) + ' V';
+    document.getElementById('p-time').textContent = pct + ' %';
+
+    step++;
+  }
+
+  /* Vibration reveal (faster, independent) */
+  function animateVib() {
+    let vi = 0;
+    const VIB_TOTAL = DATA.vib.labels.length;
+    const t = setInterval(() => {
+      if (vi >= VIB_TOTAL) { clearInterval(t); return; }
+      vibChart.data.labels.push(DATA.vib.labels[vi]);
+      vibChart.data.datasets[0].data.push(DATA.vib.values[vi]);
+      vibChart.update('none');
+      vi++;
+    }, VIB_INTERVAL);
+  }
+
+  function startAnimation() {
+    if (animTimer) clearInterval(animTimer);
+    resetCharts();
+    step = 0;
+    setTimeout(animateVib, 300);
+    animTimer = setInterval(tick, INTERVAL_MS);
+  }
+
+  /* Auto-start on load */
+  window.addEventListener('load', () => setTimeout(startAnimation, 400));
+</script>
+</body>
+</html>
