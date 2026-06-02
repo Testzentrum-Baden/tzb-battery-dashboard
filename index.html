@@ -6,74 +6,94 @@
 <title>TZB Battery Monitoring</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  :root{--tzb:#0090a8;--tzb-dark:#006f82;--tzb-light:#e6f6f9;--gap:12px;--pad:1.2rem;}
-  body{font-family:'Inter',sans-serif;background:#f2f6f7;padding:var(--pad);}
+  :root{--tzb:#0090a8;--tzb-dk:#006f82;--tzb-lt:#e6f6f9;--gap:10px;--pad:1rem;}
+  body{font-family:'Inter',sans-serif;background:#f0f4f6;padding:var(--pad);}
 
-  .header{background:#fff;border-radius:10px;padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:var(--gap);border-top:4px solid var(--tzb);}
-  .logo-wrap{display:flex;align-items:center;gap:12px;flex-shrink:0;}
-  .logo-wrap img{height:38px;width:auto;}
-  .logo-sep{width:1px;height:32px;background:#e2e8f0;flex-shrink:0;}
-  .logo-title{font-size:13px;font-weight:600;color:#1a2e44;line-height:1.4;}
-  .logo-sub{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
-  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
-  .live{display:flex;align-items:center;gap:6px;background:var(--tzb-light);border:1px solid rgba(0,144,168,0.25);padding:4px 11px;border-radius:20px;font-size:12px;font-weight:500;color:var(--tzb-dark);white-space:nowrap;}
-  .dot{width:7px;height:7px;border-radius:50%;background:#16a34a;flex-shrink:0;animation:blink 1.2s infinite;}
+  /* Header */
+  .header{background:#fff;border-radius:10px;padding:0.8rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:var(--gap);border-top:4px solid var(--tzb);}
+  .logo-wrap{display:flex;align-items:center;gap:12px;}
+  .logo-wrap img{height:36px;width:auto;}
+  .logo-sep{width:1px;height:30px;background:#e2e8f0;}
+  .logo-title{font-size:13px;font-weight:600;color:#1a2e44;}
+  .logo-sub{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
+  .header-center{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .clock{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;color:#1a2e44;letter-spacing:2px;}
+  .date{font-size:11px;color:#94a3b8;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .phase-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;transition:background 0.5s,color 0.5s;}
+  .dot{width:7px;height:7px;border-radius:50%;animation:blink 1.2s infinite;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-  .test-id{font-size:11px;color:#94a3b8;}
+  .test-meta{font-size:10px;color:#94a3b8;font-family:'JetBrains Mono',monospace;}
 
+  /* Cards */
   .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin-bottom:var(--gap);}
-  .card{background:#fff;border-radius:10px;padding:1rem 1.1rem;border-top:3px solid var(--tzb);}
-  .card.g{border-top-color:#16a34a;} .card.a{border-top-color:#d97706;} .card.r{border-top-color:#dc2626;}
-  .clabel{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:4px;}
-  .clang{font-size:9px;color:#b0c4d4;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.8px;}
-  .cval{font-size:clamp(18px,3vw,28px);font-weight:600;color:#1a2e44;line-height:1;}
+  .card{background:#fff;border-radius:10px;padding:0.9rem 1rem;border-top:3px solid #e2e8f0;transition:border-top-color 0.5s;}
+  .card.c-tzb{border-top-color:var(--tzb);}
+  .card.c-green{border-top-color:#16a34a;}
+  .card.c-amber{border-top-color:#d97706;}
+  .card.c-red{border-top-color:#dc2626;}
+  .clang{font-size:9px;color:#b0c4d4;display:block;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+  .clabel{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:4px;}
+  .cval{font-size:clamp(20px,2.8vw,30px);font-weight:600;color:#1a2e44;line-height:1;font-variant-numeric:tabular-nums;}
   .cunit{font-size:12px;font-weight:400;color:#94a3b8;margin-left:2px;}
-  .csub{font-size:11px;color:#cbd5e1;margin-top:4px;}
+  .csub{font-size:10px;color:#cbd5e1;margin-top:3px;}
+  .cdelta{font-size:10px;margin-top:2px;font-weight:500;}
 
-  .panel{background:#fff;border-radius:10px;padding:1.1rem 1.2rem;}
-  .ptitle{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:0.9rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
-  .ptitle-r{font-size:11px;color:var(--tzb);font-weight:500;text-transform:none;letter-spacing:0;}
-  .chart-wrap{position:relative;height:150px;}
+  /* Main row */
+  .row-main{display:grid;grid-template-columns:1.8fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .panel{background:#fff;border-radius:10px;padding:1rem 1.1rem;}
+  .ptitle{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#94a3b8;margin-bottom:0.8rem;display:flex;justify-content:space-between;align-items:center;}
+  .ptitle-r{font-size:11px;color:var(--tzb);font-weight:500;text-transform:none;letter-spacing:0;font-family:'JetBrains Mono',monospace;}
+  .chart-wrap{position:relative;height:145px;}
 
-  .row-main{display:grid;grid-template-columns:1.7fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
-  .row-charts{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
-
-  .irow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+  /* Info list */
+  .irow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px;}
   .irow:last-child{border-bottom:none;}
-  .ilabel{color:#94a3b8;} .ival{color:#1a2e44;font-weight:500;}
-  .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;}
-  .badge.ok{background:#dcfce7;color:#15803d;} .badge.warn{background:#fef9c3;color:#a16207;}
+  .ilabel{color:#94a3b8;}
+  .ival{color:#1a2e44;font-weight:500;font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .badge{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;}
+  .badge.ok{background:#dcfce7;color:#15803d;}
+  .badge.warn{background:#fef9c3;color:#a16207;}
+  .badge.info{background:var(--tzb-lt);color:var(--tzb-dk);}
 
-  .legend{display:flex;flex-wrap:wrap;gap:0.8rem;margin-bottom:0.7rem;}
-  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;}
-  .legend-dot{width:10px;height:3px;border-radius:2px;flex-shrink:0;}
+  /* Charts row */
+  .row-charts{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .legend{display:flex;flex-wrap:wrap;gap:0.7rem;margin-bottom:0.6rem;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#94a3b8;}
+  .legend-dot{width:10px;height:3px;border-radius:2px;}
 
-  .prog-wrap{background:#fff;border-radius:10px;padding:1.1rem 1.2rem;margin-bottom:var(--gap);}
-  .prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:0.4rem;}
-  .prog-label{display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:5px;}
-  .prog-pct{font-weight:500;color:#1a2e44;}
+  /* Progress */
+  .prog-wrap{background:#fff;border-radius:10px;padding:1rem 1.1rem;margin-bottom:var(--gap);}
+  .prog-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:0.4rem;}
+  .prog-label{display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;}
+  .prog-pct{font-weight:600;color:#1a2e44;}
   .track{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;}
-  .fill{height:100%;border-radius:3px;transition:width 0.3s ease;}
+  .fill{height:100%;border-radius:3px;transition:width 0.4s ease;}
 
-  .footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:11px;color:#cbd5e1;}
+  /* Event log */
+  .log-wrap{background:#fff;border-radius:10px;padding:1rem 1.1rem;margin-bottom:var(--gap);}
+  .log-list{display:flex;flex-direction:column;gap:3px;max-height:90px;overflow:hidden;}
+  .log-item{display:flex;align-items:baseline;gap:8px;font-size:11px;opacity:0;transform:translateY(-4px);transition:opacity 0.4s,transform 0.4s;}
+  .log-item.visible{opacity:1;transform:translateY(0);}
+  .log-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tzb);flex-shrink:0;}
+  .log-msg{color:#4a6070;}
 
-  /* Replay button */
-  .replay-btn{display:flex;align-items:center;gap:6px;background:var(--tzb);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.2s;}
-  .replay-btn:hover{background:var(--tzb-dark);}
+  /* Footer */
+  .footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:10px;color:#cbd5e1;font-family:'JetBrains Mono',monospace;}
 
   @media(max-width:768px){
     .cards{grid-template-columns:repeat(2,1fr);}
     .row-main,.row-charts{grid-template-columns:1fr;}
-    .prog-grid{grid-template-columns:1fr;gap:0.9rem;}
+    .prog-grid{grid-template-columns:repeat(2,1fr);}
     .logo-sep{display:none;}
+    .header-center{display:none;}
   }
   @media(max-width:480px){
-    :root{--pad:0.7rem;}
-    .header{flex-direction:column;align-items:flex-start;}
-    .header-right{align-items:flex-start;}
+    :root{--pad:0.6rem;}
     .chart-wrap{height:120px;}
+    .header{flex-direction:column;align-items:flex-start;}
   }
 </style>
 </head>
@@ -81,81 +101,95 @@
 
 <div class="header">
   <div class="logo-wrap">
-    <img src="./tzb-logo.png" alt="TZB logo"/>
+    <img src="./tzb-logo.png" alt="TZB"/>
     <div class="logo-sep"></div>
     <div>
       <div class="logo-title">Testzentrum Baden GmbH</div>
       <div class="logo-sub">Batterieprüfung / Battery Testing</div>
     </div>
   </div>
+  <div class="header-center">
+    <div class="clock" id="clock">15:28:07</div>
+    <div class="date">2026-03-05 &nbsp;·&nbsp; Labor 2, Rastatt</div>
+  </div>
   <div class="header-right">
-    <div class="live"><span class="dot"></span>Messung aktiv / Measurement active &nbsp;·&nbsp; Labor 2, Rastatt</div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span class="test-id">3162_BEM_1867_ElEnduranceHot · 2026-03-05</span>
-      <button class="replay-btn" onclick="startAnimation()">&#9654; Replay</button>
+    <div class="phase-badge" id="phase-badge" style="background:#e6f6f9;color:#006f82;">
+      <span class="dot" id="phase-dot" style="background:#0090a8;"></span>
+      <span id="phase-label">Vorkonditionierung</span>
     </div>
+    <div class="test-meta">3162 · BEM 1867 · ElEnduranceHot · L023</div>
   </div>
 </div>
 
 <div class="cards">
-  <div class="card">
+  <div class="card c-tzb">
     <span class="clang">Spannung / Voltage</span>
-    <div class="clabel">DCFC</div>
-    <div class="cval" id="volt">—<span class="cunit">V</span></div>
-    <div class="csub">Max: 500 V</div>
+    <div class="clabel">HV DCFC</div>
+    <div class="cval" id="volt">380<span class="cunit">V</span></div>
+    <div class="csub">Nennspannung / Nominal: 400 V</div>
+    <div class="cdelta" id="volt-delta" style="color:#94a3b8;">—</div>
   </div>
-  <div class="card g">
+  <div class="card c-green">
     <span class="clang">Strom / Current</span>
     <div class="clabel">EXT S1 CurSns</div>
-    <div class="cval" id="amp">—<span class="cunit">A</span></div>
-    <div class="csub">-56 ... +89 A</div>
+    <div class="cval" id="curr">0<span class="cunit">A</span></div>
+    <div class="csub" id="curr-dir">Ruhezustand / Idle</div>
+    <div class="cdelta" id="curr-max" style="color:#94a3b8;">Max: — A</div>
   </div>
-  <div class="card a">
+  <div class="card c-amber">
     <span class="clang">Temperatur / Temperature</span>
-    <div class="clabel">Kühlmittel Ein / Inlet</div>
-    <div class="cval" id="temp">—<span class="cunit">°C</span></div>
-    <div class="csub">Kammer: 50 °C</div>
+    <div class="clabel">Kühlmittel Eingang</div>
+    <div class="cval" id="temp">50.0<span class="cunit">°C</span></div>
+    <div class="csub">Kammer: 50°C &nbsp;|&nbsp; Ausgang: <span id="temp-out">47.8</span>°C</div>
+    <div class="cdelta" id="temp-delta" style="color:#94a3b8;">ΔT: — K</div>
   </div>
-  <div class="card r">
-    <span class="clang">Testfortschritt / Progress</span>
-    <div class="clabel">SOC / Ladezustand</div>
-    <div class="cval" id="soc">—<span class="cunit">%</span></div>
-    <div class="csub">00:00 → 38:15</div>
+  <div class="card c-red">
+    <span class="clang">Ladezustand / State of Charge</span>
+    <div class="clabel">SOC</div>
+    <div class="cval" id="soc">40<span class="cunit">%</span></div>
+    <div class="csub">Elapsed: <span id="elapsed">00:00</span></div>
+    <div class="cdelta" id="soc-delta" style="color:#94a3b8;">—</div>
   </div>
 </div>
 
 <div class="row-main">
   <div class="panel">
     <div class="ptitle">
-      Spannung / Voltage — DCFC
-      <span class="ptitle-r" id="time-cursor">00:00</span>
+      Spannung &amp; Strom / Voltage &amp; Current
+      <span class="ptitle-r" id="vctime">15:28:07</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#0090a8;"></div>Spannung / Voltage (V)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div>Strom / Current (A)</div>
     </div>
     <div class="chart-wrap"><canvas id="vcChart"></canvas></div>
   </div>
   <div class="panel">
     <div class="ptitle">Prüfparameter / Test Parameters</div>
-    <div class="irow"><span class="ilabel">Protokoll / Protocol</span><span class="ival">Endurance Hot</span></div>
+    <div class="irow"><span class="ilabel">Protokoll</span><span class="ival">ElEnduranceHot</span></div>
     <div class="irow"><span class="ilabel">Fahrzeug / Vehicle</span><span class="ival">BEM 1867</span></div>
-    <div class="irow"><span class="ilabel">Prüfnr. / Test No.</span><span class="ival">3162</span></div>
-    <div class="irow"><span class="ilabel">Status</span><span class="badge ok" id="status-badge">Läuft / Running</span></div>
-    <div class="irow"><span class="ilabel">Kammertemp. / Chamber</span><span class="badge warn">50 °C</span></div>
-    <div class="irow"><span class="ilabel">Dauer / Duration</span><span class="ival" id="elapsed-time">—</span></div>
+    <div class="irow"><span class="ilabel">Prüfnummer</span><span class="ival">3162</span></div>
+    <div class="irow"><span class="ilabel">Norm / Standard</span><span class="ival">IEC 62660-1</span></div>
+    <div class="irow"><span class="ilabel">Kammertemp.</span><span class="badge warn">50.0 °C</span></div>
+    <div class="irow"><span class="ilabel">Phase</span><span class="badge info" id="phase-info">Vorkond.</span></div>
+    <div class="irow"><span class="ilabel">Status</span><span class="badge ok" id="status-badge">Aktiv / Running</span></div>
+    <div class="irow"><span class="ilabel">Prüfbeginn</span><span class="ival">15:28:07</span></div>
   </div>
 </div>
 
 <div class="row-charts">
   <div class="panel">
-    <div class="ptitle">Kühlmitteltemperatur / Coolant Temperature <span class="ptitle-r">°C</span></div>
+    <div class="ptitle">Kühlmitteltemperatur / Coolant Temperature <span class="ptitle-r" id="thtime">15:28:07</span></div>
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Eingang / Inlet</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#0090a8;"></div>Ausgang / Outlet</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Eingang / Inlet (°C)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0090a8;"></div>Ausgang / Outlet (°C)</div>
     </div>
     <div class="chart-wrap"><canvas id="thChart"></canvas></div>
   </div>
   <div class="panel">
-    <div class="ptitle">Vibrationsspektrum / Vibration Spectrum <span class="ptitle-r">MP1_X · g</span></div>
+    <div class="ptitle">Vibration — MP1_X (STEST) <span class="ptitle-r" id="vibtime">15:28:07</span></div>
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>Amplitude (g) vs. Frequenz / Frequency (Hz)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>Beschleunigung / Acceleration (g)</div>
     </div>
     <div class="chart-wrap"><canvas id="vibChart"></canvas></div>
   </div>
@@ -165,175 +199,260 @@
   <div class="ptitle">Testfortschritt / Test Progress</div>
   <div class="prog-grid">
     <div>
-      <div class="prog-label"><span>Ladezustand / SOC</span><span class="prog-pct" id="p-soc">—</span></div>
-      <div class="track"><div class="fill" id="f-soc" style="width:0%;background:var(--tzb);"></div></div>
+      <div class="prog-label"><span>SOC</span><span class="prog-pct" id="p-soc">40 %</span></div>
+      <div class="track"><div class="fill" id="f-soc" style="width:40%;background:var(--tzb);"></div></div>
     </div>
     <div>
-      <div class="prog-label"><span>Spannung / Voltage</span><span class="prog-pct" id="p-volt">—</span></div>
-      <div class="track"><div class="fill" id="f-volt" style="width:0%;background:#d97706;"></div></div>
+      <div class="prog-label"><span>Spannung / Voltage</span><span class="prog-pct" id="p-volt">380 V</span></div>
+      <div class="track"><div class="fill" id="f-volt" style="width:63%;background:#d97706;"></div></div>
     </div>
     <div>
-      <div class="prog-label"><span>Zeitfortschritt / Time</span><span class="prog-pct" id="p-time">—</span></div>
-      <div class="track"><div class="fill" id="f-time" style="width:0%;background:#16a34a;"></div></div>
+      <div class="prog-label"><span>Strom / Current</span><span class="prog-pct" id="p-curr">0 A</span></div>
+      <div class="track"><div class="fill" id="f-curr" style="width:0%;background:#16a34a;"></div></div>
+    </div>
+    <div>
+      <div class="prog-label"><span>Zeitfortschritt / Time</span><span class="prog-pct" id="p-time">0 %</span></div>
+      <div class="track"><div class="fill" id="f-time" style="width:0%;background:#94a3b8;"></div></div>
     </div>
   </div>
 </div>
 
+<div class="log-wrap">
+  <div class="ptitle">Ereignisprotokoll / Event Log</div>
+  <div class="log-list" id="log-list"></div>
+</div>
+
 <div class="footer">
-  <span>TZB Testzentrum Baden GmbH · Rastatt, Germany · Quelle: MDF + MAT</span>
+  <span>TZB Testzentrum Baden GmbH · Rastatt, Germany · Quelle: MDF + MAT (asammdf)</span>
   <span>3162_BEM_1867_ElEnduranceHot_2026-03-05_15-28-07_L023</span>
 </div>
 
 <script>
 
-  const DATA = {
-    volt:  { labels: ["00:00", "00:09", "00:18", "00:27", "00:36", "00:46", "00:55", "01:04", "01:13", "01:22", "01:32", "01:41", "01:50", "01:59", "02:08", "02:18", "02:27", "02:36", "02:45", "02:54", "03:04", "03:13", "03:22", "03:31", "03:40", "03:50", "03:59", "04:08", "04:17", "04:26", "04:36", "04:45", "04:54", "05:03", "05:12", "05:22", "05:31", "05:40", "05:49", "05:58", "06:08", "06:17", "06:26", "06:35", "06:44", "06:54", "07:03", "07:12", "07:21", "07:30", "07:40", "07:49", "07:58", "08:07", "08:16", "08:26", "08:35", "08:44", "08:53", "09:02", "09:12", "09:21", "09:30", "09:39", "09:48", "09:58", "10:07", "10:16", "25:34", "25:43", "25:52", "26:01", "26:11", "26:20", "26:29", "26:38", "26:47", "26:56", "27:05", "27:14", "27:24", "27:33", "27:42", "27:51", "28:00", "28:09", "28:18", "28:27", "28:36", "28:46", "28:55", "29:04", "29:13", "29:22", "29:31", "29:40", "29:49", "29:59", "30:08", "30:17", "30:26", "30:35", "30:45", "30:54", "31:03", "31:12", "31:21", "31:31", "31:40", "31:49", "31:58", "32:07", "32:17", "32:26", "32:35", "32:44", "32:53", "33:03", "33:12", "33:21", "33:30", "33:39", "33:49", "33:58", "34:07", "34:16", "34:25", "34:35", "34:44", "34:53", "35:02", "35:11", "35:21", "35:30", "35:39", "35:48", "35:57", "36:07", "36:16", "36:25", "36:34", "36:43", "36:53", "37:02", "37:11", "37:20", "37:29", "37:39", "37:48", "37:57", "38:06", "38:15"],  values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 497.76, 495.36, 492.97, 490.57, 488.18, 485.78, 483.39, 480.99, 478.59, 476.2, 473.8, 471.41, 469.01, 466.61, 464.22, 461.82, 459.43, 457.03, 454.64, 452.24, 449.84, 447.45, 445.05, 442.66, 440.26, 437.86, 435.47, 433.07, 430.68, 428.28, 425.89, 423.49, 421.09, 418.7, 416.3] },
-    curr:  { labels: ["00:00", "00:15", "00:30", "00:45", "01:01", "01:16", "01:31", "01:47", "02:02", "02:17", "02:33", "02:48", "03:03", "03:18", "03:34", "03:49", "04:04", "04:20", "04:35", "04:50", "05:06", "05:21", "05:36", "05:51", "06:07", "06:22", "06:37", "06:53", "07:08", "07:23", "07:39", "07:54", "08:09", "08:24", "08:40", "08:55", "09:10", "09:26", "09:41", "09:56", "10:12", "10:27", "10:42", "10:57", "11:13", "11:28", "11:43", "11:59", "12:14", "12:29", "12:45", "13:00", "13:15", "13:30", "13:46", "14:01", "14:16", "14:32", "14:47", "15:02", "15:18", "15:33", "15:48", "16:03", "16:19", "16:34", "16:49", "17:05", "17:20", "17:35", "17:51", "18:06", "18:21", "18:36", "18:52", "19:07", "19:22", "19:38", "19:53", "20:08", "20:24", "20:39", "20:54", "21:09", "21:25", "21:40", "21:55", "22:11", "22:26", "22:41", "22:57", "23:12", "23:27", "23:42", "23:58", "24:13", "24:28", "24:44", "24:59", "25:14", "25:30", "25:45", "26:00", "26:15", "26:31", "26:46", "27:01", "27:17", "27:32", "27:47", "28:03", "28:18", "28:33", "28:48", "29:04", "29:19", "29:34", "29:50", "30:05", "30:20", "30:36", "30:51", "31:06", "31:21", "31:37", "31:52", "32:07", "32:23", "32:38", "32:53", "33:09", "33:24", "33:39", "33:54", "34:10", "34:25", "34:40", "34:56", "35:11", "35:26", "35:42", "35:57", "36:12", "36:27", "36:43", "36:58", "37:13", "37:29", "37:44", "37:59", "38:15"],  values: [29.06, 15.1, 14.08, 24.06, 7.04, -0.9, -13.95, 33.02, 6.02, -28.93, 62.08, -5.89, -39.94, 46.08, 25.09, 29.06, 29.06, 47.1, 23.04, 5.12, 10.11, 5.12, 2.05, -11.9, 3.07, -0.9, -23.94, 10.11, 23.04, -10.88, 30.08, 6.02, 28.03, 14.08, 0.0, 20.1, 0.0, 56.06, -6.91, 3.07, 3.07, 32.0, 10.11, 0.0, 32.0, 30.08, -9.98, 24.06, 26.11, 20.1, 1.02, -9.98, 6.02, 19.07, 25.09, 14.08, 43.01, 37.12, 8.06, 14.08, -6.91, 19.07, 12.03, 56.06, 42.11, 62.08, 20.1, 15.1, -2.94, 29.06, 16.0, 30.08, 43.01, -7.94, 43.01, 24.06, 28.03, 0.0, -6.91, 14.08, 23.04, 2.05, 28.03, 28.03, 38.02, 11.01, 39.04, 70.02, 12.03, 20.1, 34.05, 20.1, 5.12, 16.0, -14.98, 24.06, 44.03, 24.06, 30.08, -23.94, 14.08, 14.08, 19.07, 21.12, 21.12, 17.02, 16.0, 46.08, 21.12, -0.9, 14.08, -13.95, 43.01, 44.03, -0.9, -4.99, 42.11, 16.0, 3.07, -1.92, -14.98, 32.0, 14.08, -29.95, 12.03, 37.12, 21.12, 61.06, 11.01, 23.04, 34.05, -38.91, 24.06, -1.92, 2.05, 19.07, 11.01, 7.04, -0.9, 3.07, 69.12, 5.12, 11.01, 34.05, -7.94, -2.94, -1.92, 23.04, 10.11, 0.0, 32.0] },
-    temp1: { labels: ["00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:01", "02:16", "02:31", "02:46", "03:01", "03:16", "03:31", "03:47", "04:02", "04:17", "04:32", "04:47", "05:02", "05:17", "05:32", "05:48", "06:03", "06:18", "06:33", "06:48", "07:03", "07:18", "07:34", "07:49", "08:04", "08:19", "08:34", "08:49", "09:04", "09:19", "09:35", "09:50", "10:05", "10:20", "10:35", "10:50", "11:05", "11:21", "11:36", "11:51", "12:06", "12:21", "12:36", "12:51", "13:06", "13:22", "13:37", "13:52", "14:07", "14:22", "14:37", "14:52", "15:08", "15:23", "15:38", "15:53", "16:08", "16:23", "16:38", "16:54", "17:09", "17:24", "17:39", "17:54", "18:09", "18:24", "18:39", "18:55", "19:10", "19:25", "19:40", "19:55", "20:10", "20:25", "20:41", "20:56", "21:11", "21:26", "21:41", "21:56", "22:11", "22:26", "22:42", "22:57", "23:12", "23:27", "23:42", "23:57", "24:12", "24:28", "24:43", "24:58", "25:13", "25:28", "25:43", "25:58", "26:13", "26:29", "26:44", "26:59", "27:14", "27:29", "27:44", "27:59", "28:15", "28:30", "28:45", "29:00", "29:15", "29:30", "29:45", "30:00", "30:16", "30:31", "30:46", "31:01", "31:16", "31:31", "31:46", "32:02", "32:17", "32:32", "32:47", "33:02", "33:17", "33:32", "33:47", "34:03", "34:18", "34:33", "34:48", "35:03", "35:18", "35:33", "35:49", "36:04", "36:19", "36:34", "36:49", "37:04", "37:19", "37:34", "37:50", "38:05"], values: [50.71, 50.67, 50.67, 50.71, 50.71, 50.67, 50.67, 50.71, 50.67, 50.67, 50.71, 50.64, 50.67, 50.67, 50.75, 50.71, 50.67, 50.75, 50.67, 50.67, 50.67, 50.71, 50.71, 50.67, 50.64, 50.71, 50.71, 50.67, 50.67, 50.67, 50.64, 50.71, 50.71, 50.67, 50.75, 50.64, 50.67, 50.64, 50.67, 50.64, 50.6, 50.64, 50.71, 50.64, 50.64, 50.67, 50.71, 50.67, 50.67, 50.67, 50.67, 50.71, 50.67, 50.67, 50.67, 50.75, 50.67, 50.71, 50.67, 50.67, 50.71, 50.71, 50.67, 50.71, 50.67, 50.75, 50.71, 50.71, 50.67, 50.75, 50.67, 50.64, 50.67, 50.67, 50.67, 50.67, 50.67, 50.67, 50.64, 50.6, 50.67, 50.71, 50.64, 50.64, 50.67, 50.6, 50.71, 50.64, 50.67, 50.67, 50.64, 50.64, 50.67, 50.67, 50.75, 50.67, 50.71, 50.67, 50.64, 50.64, 50.71, 50.75, 50.64, 50.67, 50.67, 50.67, 50.67, 50.67, 50.71, 50.67, 50.67, 50.67, 50.67, 50.64, 50.67, 50.71, 50.67, 50.64, 50.71, 50.67, 50.71, 50.64, 50.71, 50.67, 50.67, 50.67, 50.71, 50.67, 50.64, 50.67, 50.71, 50.71, 50.67, 50.71, 50.67, 50.67, 50.67, 50.64, 50.67, 50.71, 50.64, 50.64, 50.71, 50.67, 50.6, 50.67, 50.71, 50.75, 50.67, 50.67, 50.64, 50.67]  },
-    temp2: { labels: ["00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:01", "02:16", "02:31", "02:46", "03:01", "03:16", "03:31", "03:47", "04:02", "04:17", "04:32", "04:47", "05:02", "05:17", "05:32", "05:48", "06:03", "06:18", "06:33", "06:48", "07:03", "07:18", "07:34", "07:49", "08:04", "08:19", "08:34", "08:49", "09:04", "09:19", "09:35", "09:50", "10:05", "10:20", "10:35", "10:50", "11:05", "11:21", "11:36", "11:51", "12:06", "12:21", "12:36", "12:51", "13:06", "13:22", "13:37", "13:52", "14:07", "14:22", "14:37", "14:52", "15:08", "15:23", "15:38", "15:53", "16:08", "16:23", "16:38", "16:54", "17:09", "17:24", "17:39", "17:54", "18:09", "18:24", "18:39", "18:55", "19:10", "19:25", "19:40", "19:55", "20:10", "20:25", "20:41", "20:56", "21:11", "21:26", "21:41", "21:56", "22:11", "22:26", "22:42", "22:57", "23:12", "23:27", "23:42", "23:57", "24:12", "24:28", "24:43", "24:58", "25:13", "25:28", "25:43", "25:58", "26:13", "26:29", "26:44", "26:59", "27:14", "27:29", "27:44", "27:59", "28:15", "28:30", "28:45", "29:00", "29:15", "29:30", "29:45", "30:00", "30:16", "30:31", "30:46", "31:01", "31:16", "31:31", "31:46", "32:02", "32:17", "32:32", "32:47", "33:02", "33:17", "33:32", "33:47", "34:03", "34:18", "34:33", "34:48", "35:03", "35:18", "35:33", "35:49", "36:04", "36:19", "36:34", "36:49", "37:04", "37:19", "37:34", "37:50", "38:05"], values: [48.31, 48.27, 48.27, 48.27, 48.27, 48.39, 48.31, 48.31, 48.31, 48.27, 48.35, 48.35, 48.31, 48.31, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.27, 48.31, 48.27, 48.31, 48.35, 48.24, 48.27, 48.27, 48.31, 48.27, 48.31, 48.35, 48.35, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.35, 48.35, 48.31, 48.27, 48.27, 48.35, 48.27, 48.27, 48.39, 48.35, 48.31, 48.27, 48.35, 48.27, 48.27, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.27, 48.31, 48.27, 48.31, 48.31, 48.31, 48.27, 48.27, 48.27, 48.31, 48.31, 48.31, 48.35, 48.31, 48.31, 48.31, 48.24, 48.27, 48.27, 48.27, 48.27, 48.27, 48.24, 48.27, 48.27, 48.24, 48.31, 48.24, 48.27, 48.24, 48.27, 48.27, 48.2, 48.27, 48.27, 48.24, 48.24, 48.27, 48.27, 48.31, 48.31, 48.2, 48.27, 48.24, 48.27, 48.2, 48.27, 48.24, 48.27, 48.24, 48.24, 48.24, 48.27, 48.24, 48.27, 48.27, 48.27, 48.27, 48.27, 48.24, 48.27, 48.27, 48.27, 48.31, 48.27, 48.27, 48.24, 48.27, 48.24, 48.27, 48.24, 48.24, 48.27, 48.27, 48.24, 48.27, 48.31, 48.24, 48.27, 48.24, 48.27, 48.27, 48.24, 48.24, 48.2, 48.27, 48.27, 48.16, 48.27, 48.24]  },
-    soc:   { labels: ["00:00", "00:09", "00:18", "00:27", "00:36", "00:46", "00:55", "01:04", "01:13", "01:22", "01:32", "01:41", "01:50", "01:59", "02:08", "02:18", "02:27", "02:36", "02:45", "02:54", "03:04", "03:13", "03:22", "03:31", "03:40", "03:50", "03:59", "04:08", "04:17", "04:26", "04:36", "04:45", "04:54", "05:03", "05:12", "05:22", "05:31", "05:40", "05:49", "05:58", "06:08", "06:17", "06:26", "06:35", "06:44", "06:54", "07:03", "07:12", "07:21", "07:30", "07:40", "07:49", "07:58", "08:07", "08:16", "08:26", "08:35", "08:44", "08:53", "09:02", "09:12", "09:21", "09:30", "09:39", "09:48", "09:58", "10:07", "10:16", "25:34", "25:43", "25:52", "26:01", "26:11", "26:20", "26:29", "26:38", "26:47", "26:56", "27:05", "27:14", "27:24", "27:33", "27:42", "27:51", "28:00", "28:09", "28:18", "28:27", "28:36", "28:46", "28:55", "29:04", "29:13", "29:22", "29:31", "29:40", "29:49", "29:59", "30:08", "30:17", "30:26", "30:35", "30:45", "30:54", "31:03", "31:12", "31:21", "31:31", "31:40", "31:49", "31:58", "32:07", "32:17", "32:26", "32:35", "32:44", "32:53", "33:03", "33:12", "33:21", "33:30", "33:39", "33:49", "33:58", "34:07", "34:16", "34:25", "34:35", "34:44", "34:53", "35:02", "35:11", "35:21", "35:30", "35:39", "35:48", "35:57", "36:07", "36:16", "36:25", "36:34", "36:43", "36:53", "37:02", "37:11", "37:20", "37:29", "37:39", "37:48", "37:57", "38:06", "38:15"],   values: [40.82, 41.7, 42.58, 43.46, 44.34, 45.22, 46.11, 46.99, 47.87, 48.75, 49.63, 50.51, 51.39, 52.28, 53.16, 54.04, 54.92, 55.8, 56.68, 57.56, 58.44, 59.33, 60.21, 61.09, 61.97, 62.85, 63.73, 64.61, 65.49, 66.38, 67.26, 68.14, 69.02, 69.9, 70.78, 71.66, 72.55, 73.43, 74.31, 75.19, 76.07, 76.95, 77.83, 78.71, 79.6, 80.48, 81.36, 82.24, 83.12, 84.0, 84.88, 85.76, 86.65, 87.53, 88.41, 89.29, 90.17, 91.05, 91.93, 92.82, 93.7, 94.58, 95.46, 96.34, 97.22, 98.1, 98.98, 99.87, 0.55, 1.21, 1.86, 2.51, 3.16, 3.82, 4.47, 5.12, 5.77, 6.43, 7.08, 7.73, 8.38, 9.04, 9.69, 10.34, 10.99, 11.65, 12.3, 12.95, 13.6, 14.26, 14.91, 15.56, 16.21, 16.87, 17.52, 18.17, 18.82, 19.48, 20.13, 20.78, 21.43, 22.09, 22.74, 23.39, 24.04, 24.7, 25.35, 26.0, 26.65, 27.3, 27.96, 28.61, 29.26, 29.91, 30.57, 31.22, 31.87, 32.52, 33.18, 33.83, 34.48, 35.13, 35.79, 36.44, 37.09, 37.74, 38.4, 39.05, 39.7, 40.35, 41.01, 41.66, 42.31, 42.96, 43.62, 44.27, 44.92, 45.57, 46.23, 46.88, 47.53, 48.18, 48.84, 49.49, 50.14, 50.79, 51.45, 52.1, 52.75, 53.4, 54.06, 54.71] },
-    vib:   { labels: [4.0, 4.08, 4.17, 4.25, 4.34, 4.43, 4.52, 4.61, 4.71, 4.8, 4.9, 5.0, 5.1, 5.21, 5.32, 5.43, 5.54, 5.65, 5.77, 5.89, 6.01, 6.13, 6.26, 6.38, 6.52, 6.65, 6.79, 6.92, 7.07, 7.21, 7.36, 7.51, 7.67, 7.82, 7.98, 8.15, 8.32, 8.49, 8.66, 8.84, 9.02, 9.2, 9.39, 9.59, 9.78, 9.98, 10.19, 10.4, 10.61, 10.83, 11.05, 11.28, 11.51, 11.75, 11.99, 12.23, 12.49, 12.74, 13.0, 13.27, 13.54, 13.82, 14.11, 14.4, 14.69, 14.99, 15.3, 15.61, 15.94, 16.26, 16.6, 16.94, 17.28, 17.64, 18.0, 18.37, 18.75, 19.13, 19.53, 19.93, 20.34, 20.75, 21.18, 21.62, 22.06, 22.51, 22.98, 23.45, 23.93, 24.42, 24.92, 25.43, 25.96, 26.49, 27.03, 27.59, 28.15, 28.73, 29.32, 29.92, 30.54, 31.17, 31.81, 32.46, 33.13, 33.81, 34.5, 35.21, 35.93, 36.67, 37.42, 38.19, 38.97, 39.77, 40.59, 41.43, 42.28, 43.14, 44.03, 44.93, 45.86, 46.8, 47.76, 48.74, 49.74, 50.76, 51.8, 52.87, 53.95, 55.06, 56.19, 57.35, 58.52, 59.73, 60.95, 62.2, 63.48, 64.79, 66.12, 67.47, 68.86, 70.27, 71.72, 73.19, 74.69, 76.23, 77.79, 79.39, 81.02, 82.68, 84.38, 86.11, 87.88, 89.69, 91.53, 93.41, 95.32, 97.28, 99.28, 101.32, 103.4, 105.52, 107.69, 109.9, 112.16, 114.46, 116.81, 119.21, 121.66, 124.16, 126.71, 129.31, 131.96, 134.67, 137.44, 140.26, 143.14, 146.08, 149.08, 152.14, 155.27, 158.45, 161.71, 165.03, 168.42, 171.88, 175.4, 179.01, 182.68, 186.43, 190.26, 194.17, 198.16, 202.23, 206.38, 210.62, 214.94, 219.36, 223.86, 228.46, 233.15, 237.94, 242.82, 247.81, 252.9], values: [0.01167, 0.01171, 0.01175, 0.0118, 0.01184, 0.01188, 0.01193, 0.01198, 0.01202, 0.01207, 0.01212, 0.01217, 0.01204, 0.01191, 0.01178, 0.01165, 0.01151, 0.01137, 0.01122, 0.01108, 0.0109, 0.01043, 0.00994, 0.00944, 0.00894, 0.00842, 0.00789, 0.00735, 0.00722, 0.00765, 0.00809, 0.00853, 0.00899, 0.00945, 0.00992, 0.01042, 0.01086, 0.01132, 0.01179, 0.01226, 0.01271, 0.0123, 0.01188, 0.01145, 0.01102, 0.01049, 0.01103, 0.01163, 0.01224, 0.01287, 0.01351, 0.01411, 0.01473, 0.01535, 0.01612, 0.01635, 0.01661, 0.01687, 0.01713, 0.01669, 0.01625, 0.0158, 0.01541, 0.01536, 0.01531, 0.01526, 0.01522, 0.01519, 0.01516, 0.01586, 0.01677, 0.01769, 0.01759, 0.01724, 0.01688, 0.01698, 0.01708, 0.01732, 0.01777, 0.01823, 0.01891, 0.01964, 0.01986, 0.01931, 0.01882, 0.01932, 0.01994, 0.01989, 0.01984, 0.02017, 0.02058, 0.02087, 0.02117, 0.02176, 0.02241, 0.02241, 0.02242, 0.02248, 0.02201, 0.02108, 0.02168, 0.02228, 0.02176, 0.02158, 0.02162, 0.02154, 0.02206, 0.02281, 0.02333, 0.02344, 0.02331, 0.0229, 0.02231, 0.02281, 0.02331, 0.02335, 0.02308, 0.0233, 0.02329, 0.02252, 0.0234, 0.02348, 0.02398, 0.02374, 0.03016, 0.02805, 0.02472, 0.02463, 0.02527, 0.02442, 0.02419, 0.02466, 0.0252, 0.02462, 0.0251, 0.02563, 0.02564, 0.0261, 0.02553, 0.02585, 0.02636, 0.02724, 0.02697, 0.02721, 0.02738, 0.0272, 0.02789, 0.0282, 0.02851, 0.02969, 0.02994, 0.03031, 0.03011, 0.02964, 0.03009, 0.02983, 0.03054, 0.03211, 0.03162, 0.0337, 0.03569, 0.03539, 0.03811, 0.03977, 0.04565, 0.04816, 0.04339, 0.03823, 0.03709, 0.03965, 0.04548, 0.04842, 0.05196, 0.05779, 0.06276, 0.06631, 0.07459, 0.08136, 0.08374, 0.0761, 0.06805, 0.06313, 0.05473, 0.04487, 0.0363, 0.03202, 0.02712, 0.02415, 0.02148, 0.01689, 0.01802, 0.01908, 0.0164, 0.02475, 0.02047, 0.01228, 0.02146, 0.02074, 0.03314, 0.01246, 0.01558, 0.01753, 0.02985, 0.01943, 0.00642] },
-  };
-  const TOTAL_PTS = DATA.volt.labels.length;
+  const N = 200;
+  const VIB_N = 150;
+  const TOTAL_S = 2295;
 
+  const DATA = {
+    ts:       ["15:28:07", "15:28:18", "15:28:30", "15:28:41", "15:28:53", "15:29:04", "15:29:16", "15:29:27", "15:29:39", "15:29:50", "15:30:02", "15:30:13", "15:30:25", "15:30:36", "15:30:48", "15:30:59", "15:31:11", "15:31:23", "15:31:34", "15:31:46", "15:31:57", "15:32:09", "15:32:20", "15:32:32", "15:32:43", "15:32:55", "15:33:06", "15:33:18", "15:33:29", "15:33:41", "15:33:52", "15:34:04", "15:34:16", "15:34:27", "15:34:39", "15:34:50", "15:35:02", "15:35:13", "15:35:25", "15:35:36", "15:35:48", "15:35:59", "15:36:11", "15:36:22", "15:36:34", "15:36:45", "15:36:57", "15:37:09", "15:37:20", "15:37:32", "15:37:43", "15:37:55", "15:38:06", "15:38:18", "15:38:29", "15:38:41", "15:38:52", "15:39:04", "15:39:15", "15:39:27", "15:39:38", "15:39:50", "15:40:02", "15:40:13", "15:40:25", "15:40:36", "15:40:48", "15:40:59", "15:41:11", "15:41:22", "15:41:34", "15:41:45", "15:41:57", "15:42:08", "15:42:20", "15:42:31", "15:42:43", "15:42:55", "15:43:06", "15:43:18", "15:43:29", "15:43:41", "15:43:52", "15:44:04", "15:44:15", "15:44:27", "15:44:38", "15:44:50", "15:45:01", "15:45:13", "15:45:24", "15:45:36", "15:45:48", "15:45:59", "15:46:11", "15:46:22", "15:46:34", "15:46:45", "15:46:57", "15:47:08", "15:47:20", "15:47:31", "15:47:43", "15:47:54", "15:48:06", "15:48:17", "15:48:29", "15:48:40", "15:48:52", "15:49:04", "15:49:15", "15:49:27", "15:49:38", "15:49:50", "15:50:01", "15:50:13", "15:50:24", "15:50:36", "15:50:47", "15:50:59", "15:51:10", "15:51:22", "15:51:33", "15:51:45", "15:51:57", "15:52:08", "15:52:20", "15:52:31", "15:52:43", "15:52:54", "15:53:06", "15:53:17", "15:53:29", "15:53:40", "15:53:52", "15:54:03", "15:54:15", "15:54:26", "15:54:38", "15:54:50", "15:55:01", "15:55:13", "15:55:24", "15:55:36", "15:55:47", "15:55:59", "15:56:10", "15:56:22", "15:56:33", "15:56:45", "15:56:56", "15:57:08", "15:57:19", "15:57:31", "15:57:43", "15:57:54", "15:58:06", "15:58:17", "15:58:29", "15:58:40", "15:58:52", "15:59:03", "15:59:15", "15:59:26", "15:59:38", "15:59:49", "16:00:01", "16:00:12", "16:00:24", "16:00:36", "16:00:47", "16:00:59", "16:01:10", "16:01:22", "16:01:33", "16:01:45", "16:01:56", "16:02:08", "16:02:19", "16:02:31", "16:02:42", "16:02:54", "16:03:05", "16:03:17", "16:03:29", "16:03:40", "16:03:52", "16:04:03", "16:04:15", "16:04:26", "16:04:38", "16:04:49", "16:05:01", "16:05:12", "16:05:24", "16:05:35", "16:05:47", "16:05:58", "16:06:10", "16:06:22"],
+    el:       ["00:00", "00:11", "00:23", "00:34", "00:46", "00:57", "01:09", "01:20", "01:32", "01:43", "01:55", "02:06", "02:18", "02:29", "02:41", "02:52", "03:04", "03:16", "03:27", "03:39", "03:50", "04:02", "04:13", "04:25", "04:36", "04:48", "04:59", "05:11", "05:22", "05:34", "05:45", "05:57", "06:09", "06:20", "06:32", "06:43", "06:55", "07:06", "07:18", "07:29", "07:41", "07:52", "08:04", "08:15", "08:27", "08:38", "08:50", "09:02", "09:13", "09:25", "09:36", "09:48", "09:59", "10:11", "10:22", "10:34", "10:45", "10:57", "11:08", "11:20", "11:31", "11:43", "11:55", "12:06", "12:18", "12:29", "12:41", "12:52", "13:04", "13:15", "13:27", "13:38", "13:50", "14:01", "14:13", "14:24", "14:36", "14:48", "14:59", "15:11", "15:22", "15:34", "15:45", "15:57", "16:08", "16:20", "16:31", "16:43", "16:54", "17:06", "17:17", "17:29", "17:41", "17:52", "18:04", "18:15", "18:27", "18:38", "18:50", "19:01", "19:13", "19:24", "19:36", "19:47", "19:59", "20:10", "20:22", "20:33", "20:45", "20:57", "21:08", "21:20", "21:31", "21:43", "21:54", "22:06", "22:17", "22:29", "22:40", "22:52", "23:03", "23:15", "23:26", "23:38", "23:50", "24:01", "24:13", "24:24", "24:36", "24:47", "24:59", "25:10", "25:22", "25:33", "25:45", "25:56", "26:08", "26:19", "26:31", "26:43", "26:54", "27:06", "27:17", "27:29", "27:40", "27:52", "28:03", "28:15", "28:26", "28:38", "28:49", "29:01", "29:12", "29:24", "29:36", "29:47", "29:59", "30:10", "30:22", "30:33", "30:45", "30:56", "31:08", "31:19", "31:31", "31:42", "31:54", "32:05", "32:17", "32:29", "32:40", "32:52", "33:03", "33:15", "33:26", "33:38", "33:49", "34:01", "34:12", "34:24", "34:35", "34:47", "34:58", "35:10", "35:22", "35:33", "35:45", "35:56", "36:08", "36:19", "36:31", "36:42", "36:54", "37:05", "37:17", "37:28", "37:40", "37:51", "38:03", "38:15"],
+    volt:     [380.1, 380.2, 380.1, 380.1, 380.0, 379.8, 379.7, 379.5, 379.6, 379.7, 379.8, 380.0, 380.0, 379.9, 380.1, 380.4, 381.1, 382.0, 383.0, 384.2, 385.2, 386.1, 387.2, 388.0, 389.0, 390.1, 391.3, 392.5, 393.6, 394.7, 395.7, 396.5, 397.3, 398.5, 399.5, 400.4, 401.4, 402.5, 403.6, 404.6, 405.8, 407.0, 408.1, 409.0, 409.9, 411.0, 411.8, 413.0, 414.1, 415.3, 416.5, 417.4, 418.3, 419.3, 420.1, 421.2, 422.1, 423.1, 424.2, 425.1, 426.2, 427.1, 428.0, 429.0, 430.1, 431.4, 432.5, 433.7, 435.0, 435.8, 436.6, 437.5, 438.6, 439.7, 440.6, 441.8, 442.6, 443.6, 444.4, 445.5, 446.6, 447.5, 448.5, 449.7, 450.7, 451.7, 452.5, 453.5, 454.6, 455.6, 456.9, 458.1, 459.3, 460.3, 461.3, 462.3, 463.0, 464.0, 465.0, 465.8, 466.7, 467.9, 469.1, 470.4, 471.5, 472.7, 473.7, 474.7, 475.7, 476.6, 477.6, 478.5, 479.5, 480.5, 481.5, 482.7, 484.0, 485.0, 485.9, 486.8, 487.8, 488.6, 489.3, 490.3, 491.5, 492.6, 493.8, 494.9, 496.1, 497.2, 498.0, 499.0, 499.6, 500.0, 500.2, 500.0, 500.0, 500.1, 500.3, 500.2, 499.8, 499.3, 498.4, 497.1, 495.5, 494.0, 492.8, 491.6, 490.3, 489.0, 487.5, 486.0, 484.2, 482.6, 481.1, 479.7, 478.3, 476.8, 475.3, 473.9, 472.6, 471.2, 469.9, 468.5, 467.0, 465.3, 463.6, 462.3, 461.0, 459.7, 458.2, 456.9, 455.3, 453.5, 452.2, 450.9, 449.3, 447.9, 446.2, 444.8, 443.3, 441.7, 440.5, 439.1, 437.6, 436.4, 435.1, 433.7, 432.1, 430.3, 429.0, 427.5, 426.0, 424.7, 423.5, 422.1, 420.6, 419.2, 417.8, 416.5],
+    curr:     [1.4, 1.4, 1.4, 1.3, 0.6, 0.1, 1.2, 1.2, 1.9, 2.1, 1.7, 1.0, 0.0, 2.9, 17.7, 33.9, 47.4, 54.4, 49.3, 49.5, 50.0, 49.7, 50.0, 50.3, 50.6, 50.5, 50.0, 49.6, 49.7, 50.3, 51.1, 51.0, 49.7, 49.6, 50.3, 51.1, 51.6, 52.2, 51.7, 50.6, 50.2, 49.3, 49.3, 49.5, 50.3, 50.6, 50.2, 49.3, 49.5, 49.0, 49.7, 51.0, 51.7, 51.3, 51.0, 49.4, 48.9, 48.7, 48.8, 47.4, 47.3, 47.2, 48.2, 48.7, 49.1, 48.9, 50.6, 51.1, 50.7, 50.6, 50.0, 49.8, 50.7, 50.3, 49.1, 49.5, 49.4, 49.8, 50.8, 51.1, 50.8, 50.4, 50.3, 50.0, 50.1, 49.4, 48.9, 48.7, 49.8, 50.0, 50.6, 51.0, 50.3, 49.8, 50.0, 49.4, 50.4, 51.4, 51.7, 51.5, 50.2, 49.5, 50.1, 50.0, 50.3, 49.2, 48.5, 48.1, 48.6, 49.3, 49.4, 48.9, 49.5, 49.6, 49.6, 50.3, 49.8, 49.5, 50.5, 51.0, 50.8, 50.3, 49.7, 49.3, 50.4, 51.8, 52.3, 51.6, 51.5, 51.0, 50.5, 51.4, 50.7, 47.9, 43.5, 37.8, 30.7, 24.4, 14.8, 11.6, 14.8, 20.7, 27.2, 32.7, 30.2, 30.0, 30.7, 30.1, 28.7, 29.3, 29.0, 29.1, 29.6, 29.3, 29.0, 28.9, 29.5, 30.5, 30.6, 29.9, 29.7, 28.7, 28.7, 28.6, 28.5, 27.7, 27.0, 27.8, 29.8, 30.5, 31.7, 31.1, 29.6, 29.2, 29.3, 28.6, 28.8, 29.6, 30.7, 31.1, 31.5, 30.6, 29.4, 30.4, 30.9, 30.5, 29.7, 28.6, 28.4, 29.4, 30.0, 30.6, 29.2, 28.3, 27.6, 26.8, 27.1, 27.3, 27.8, 28.5],
+    temp_in:  [50.05, 50.03, 50.02, 50.01, 50.0, 49.99, 49.97, 49.97, 49.96, 49.97, 50.0, 49.98, 50.0, 50.0, 49.98, 50.0, 50.01, 50.02, 50.03, 50.06, 50.09, 50.1, 50.11, 50.1, 50.11, 50.13, 50.13, 50.11, 50.11, 50.12, 50.14, 50.16, 50.16, 50.17, 50.23, 50.23, 50.25, 50.24, 50.21, 50.19, 50.22, 50.23, 50.26, 50.28, 50.32, 50.32, 50.34, 50.35, 50.32, 50.34, 50.36, 50.34, 50.32, 50.31, 50.29, 50.28, 50.29, 50.34, 50.36, 50.4, 50.43, 50.45, 50.45, 50.47, 50.47, 50.48, 50.48, 50.48, 50.5, 50.51, 50.55, 50.56, 50.57, 50.6, 50.62, 50.61, 50.61, 50.6, 50.63, 50.62, 50.67, 50.72, 50.72, 50.74, 50.74, 50.76, 50.76, 50.76, 50.76, 50.74, 50.77, 50.78, 50.77, 50.81, 50.82, 50.87, 50.9, 50.92, 50.93, 50.91, 50.9, 50.87, 50.88, 50.87, 50.89, 50.92, 50.93, 50.95, 50.96, 50.94, 50.94, 50.98, 50.99, 51.02, 51.05, 51.06, 51.07, 51.07, 51.06, 51.06, 51.06, 51.08, 51.06, 51.1, 51.11, 51.13, 51.16, 51.16, 51.16, 51.18, 51.17, 51.17, 51.17, 51.18, 51.19, 51.21, 51.22, 51.21, 51.17, 51.19, 51.15, 51.13, 51.13, 51.15, 51.23, 51.25, 51.28, 51.29, 51.31, 51.34, 51.3, 51.3, 51.31, 51.35, 51.4, 51.42, 51.49, 51.53, 51.59, 51.62, 51.66, 51.68, 51.7, 51.69, 51.67, 51.69, 51.74, 51.77, 51.81, 51.86, 51.9, 51.94, 51.97, 51.94, 51.93, 51.96, 51.94, 51.96, 51.99, 51.98, 51.98, 52.03, 52.07, 52.09, 52.11, 52.15, 52.14, 52.19, 52.22, 52.23, 52.27, 52.31, 52.35, 52.41, 52.43, 52.47, 52.5, 52.5, 52.45, 52.34],
+    temp_out: [47.94, 47.89, 47.86, 47.83, 47.81, 47.79, 47.77, 47.75, 47.71, 47.74, 47.76, 47.7, 47.74, 47.79, 47.81, 47.83, 47.87, 47.9, 47.89, 47.94, 47.93, 47.87, 47.9, 47.89, 47.87, 47.9, 47.93, 47.93, 47.94, 47.95, 47.94, 47.94, 47.95, 47.93, 47.98, 48.01, 48.01, 48.0, 47.97, 48.0, 48.04, 48.06, 48.13, 48.14, 48.19, 48.16, 48.13, 48.12, 48.07, 48.11, 48.11, 48.11, 48.11, 48.1, 48.08, 48.06, 48.04, 48.1, 48.14, 48.17, 48.22, 48.23, 48.21, 48.25, 48.27, 48.27, 48.25, 48.27, 48.3, 48.31, 48.33, 48.3, 48.28, 48.33, 48.34, 48.34, 48.36, 48.38, 48.44, 48.43, 48.46, 48.51, 48.5, 48.53, 48.52, 48.56, 48.6, 48.59, 48.59, 48.54, 48.56, 48.58, 48.58, 48.63, 48.64, 48.69, 48.71, 48.68, 48.7, 48.68, 48.67, 48.66, 48.67, 48.66, 48.66, 48.69, 48.69, 48.72, 48.78, 48.75, 48.76, 48.77, 48.76, 48.78, 48.81, 48.84, 48.86, 48.91, 48.91, 48.87, 48.86, 48.84, 48.81, 48.85, 48.85, 48.85, 48.88, 48.92, 48.93, 48.93, 48.93, 48.97, 49.0, 49.02, 49.01, 49.02, 49.02, 49.0, 48.94, 48.93, 48.9, 48.91, 48.94, 48.95, 49.06, 49.1, 49.12, 49.12, 49.13, 49.13, 49.11, 49.11, 49.1, 49.11, 49.17, 49.18, 49.23, 49.27, 49.33, 49.36, 49.41, 49.45, 49.45, 49.47, 49.46, 49.48, 49.53, 49.57, 49.6, 49.64, 49.65, 49.67, 49.7, 49.67, 49.67, 49.7, 49.72, 49.77, 49.77, 49.76, 49.75, 49.79, 49.82, 49.82, 49.84, 49.89, 49.91, 49.97, 50.0, 50.03, 50.06, 50.1, 50.16, 50.22, 50.21, 50.25, 50.27, 50.27, 50.24, 50.17],
+    soc:      [40.0, 40.2, 40.3, 40.4, 40.5, 40.6, 40.8, 40.9, 41.1, 41.3, 41.5, 41.6, 41.7, 41.9, 42.0, 42.2, 42.5, 42.9, 43.4, 43.9, 44.4, 44.9, 45.4, 45.9, 46.4, 47.0, 47.5, 48.0, 48.4, 48.9, 49.4, 49.9, 50.4, 50.9, 51.4, 52.0, 52.5, 53.0, 53.4, 53.9, 54.4, 54.9, 55.4, 55.9, 56.4, 56.9, 57.4, 57.9, 58.4, 58.8, 59.3, 59.8, 60.3, 60.8, 61.3, 61.9, 62.4, 62.9, 63.3, 63.8, 64.3, 64.8, 65.3, 65.8, 66.3, 66.8, 67.3, 67.8, 68.3, 68.8, 69.3, 69.8, 70.3, 70.7, 71.2, 71.7, 72.2, 72.7, 73.2, 73.7, 74.2, 74.7, 75.2, 75.7, 76.2, 76.8, 77.3, 77.8, 78.2, 78.7, 79.1, 79.6, 80.1, 80.7, 81.2, 81.7, 82.2, 82.6, 83.2, 83.7, 84.2, 84.7, 85.2, 85.7, 86.2, 86.7, 87.2, 87.7, 88.1, 88.6, 89.1, 89.6, 90.1, 90.6, 91.1, 91.6, 92.1, 92.6, 93.1, 93.5, 94.0, 94.6, 95.0, 95.5, 96.0, 96.5, 97.0, 97.5, 98.0, 98.6, 99.0, 99.5, 99.8, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 99.6, 98.9, 98.1, 97.0, 95.9, 94.9, 93.8, 92.8, 91.7, 90.7, 89.6, 88.6, 87.6, 86.6, 85.5, 84.5, 83.5, 82.4, 81.4, 80.4, 79.3, 78.3, 77.3, 76.2, 75.2, 74.1, 73.1, 72.1, 71.1, 70.0, 69.0, 67.9, 66.9, 65.8, 64.8, 63.7, 62.7, 61.7, 60.6, 59.7, 58.6, 57.6, 56.5, 55.5, 54.5, 53.5, 52.5, 51.5, 50.4, 49.3, 48.2, 47.2, 46.2, 45.1, 44.1, 43.1, 42.0, 41.1, 40.1],
+    phases:   ["Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Vorkonditionierung", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CC", "Laden CV", "Laden CV", "Laden CV", "Laden CV", "Laden CV", "Laden CV", "Laden CV", "Laden CV", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen", "Entladen"],
+    vib_el:   ["00:00", "00:15", "00:30", "00:46", "01:01", "01:17", "01:32", "01:47", "02:03", "02:18", "02:34", "02:49", "03:04", "03:20", "03:35", "03:51", "04:06", "04:21", "04:37", "04:52", "05:08", "05:23", "05:38", "05:54", "06:09", "06:25", "06:40", "06:55", "07:11", "07:26", "07:42", "07:57", "08:12", "08:28", "08:43", "08:59", "09:14", "09:29", "09:45", "10:00", "10:16", "10:31", "10:46", "11:02", "11:17", "11:33", "11:48", "12:03", "12:19", "12:34", "12:50", "13:05", "13:20", "13:36", "13:51", "14:07", "14:22", "14:37", "14:53", "15:08", "15:24", "15:39", "15:54", "16:10", "16:25", "16:41", "16:56", "17:11", "17:27", "17:42", "17:58", "18:13", "18:28", "18:44", "18:59", "19:15", "19:30", "19:46", "20:01", "20:16", "20:32", "20:47", "21:03", "21:18", "21:33", "21:49", "22:04", "22:20", "22:35", "22:50", "23:06", "23:21", "23:37", "23:52", "24:07", "24:23", "24:38", "24:54", "25:09", "25:24", "25:40", "25:55", "26:11", "26:26", "26:41", "26:57", "27:12", "27:28", "27:43", "27:58", "28:14", "28:29", "28:45", "29:00", "29:15", "29:31", "29:46", "30:02", "30:17", "30:32", "30:48", "31:03", "31:19", "31:34", "31:49", "32:05", "32:20", "32:36", "32:51", "33:06", "33:22", "33:37", "33:53", "34:08", "34:23", "34:39", "34:54", "35:10", "35:25", "35:40", "35:56", "36:11", "36:27", "36:42", "36:57", "37:13", "37:28", "37:44", "37:59", "38:15"],
+    vib:      [0.114, 0.7882, 0.3369, 0.1192, 0.3424, 0.5789, 0.4601, 0.3974, 0.4409, 0.2259, 0.1271, 0.1267, 0.4965, 0.4142, 0.3765, 0.6289, 0.3097, 0.2759, 0.3025, 0.7666, 0.3578, 0.7309, 0.3607, 0.1841, 0.2416, 0.4097, 0.4456, 0.1158, 0.4689, 0.1127, 0.1946, 0.1423, 0.3996, 0.6203, 0.4177, 0.5263, 0.2882, 0.229, 0.3064, 0.6083, 0.2582, 0.7344, 0.4905, 0.2172, 0.3802, 0.4051, 0.4183, 0.2061, 0.5028, 0.3738, 0.1557, 0.15, 0.6288, 0.5129, 0.2653, 0.667, 0.4451, 0.1375, 0.5166, 0.634, 0.3202, 0.7652, 0.5635, 0.158, 0.2538, 0.2805, 0.5272, 0.1242, 0.3046, 0.3828, 0.2495, 0.1645, 0.4679, 0.8332, 0.2861, 0.8233, 0.2481, 0.1327, 0.308, 0.6747, 0.3904, 0.6487, 0.461, 0.143, 0.1645, 0.1001, 0.469, 0.259, 0.4058, 0.2729, 0.2337, 0.1196, 0.584, 0.6273, 0.2257, 0.6363, 0.4128, 0.111, 0.3471, 0.514, 0.4345, 0.5595, 0.4342, 0.1896, 0.112, 0.1991, 0.6559, 0.3227, 0.4003, 0.4242, 0.3778, 0.1015, 0.5254, 0.7217, 0.4126, 0.8724, 0.2688, 0.2512, 0.2249, 0.4442, 0.31, 0.5271, 0.5488, 0.2074, 0.2075, 0.1255, 0.6156, 0.4016, 0.5286, 0.5029, 0.3876, 0.1479, 0.5281, 0.6075, 0.1893, 0.805, 0.249, 0.3087, 0.1867, 0.4164, 0.348, 0.2374, 0.3779, 0.2016, 0.2531, 0.268, 0.6897, 0.4809, 0.5447, 0.7048],
+    events:   [{"t": 0, "msg": "Pr\u00fcfstart / Test started"}, {"t": 90, "msg": "Vorkonditionierung abgeschlossen / Pre-cond. done"}, {"t": 135, "msg": "CC-Ladephase gestartet / CC charge started"}, {"t": 780, "msg": "SOC 50% erreicht / SOC 50% reached"}, {"t": 1200, "msg": "SOC 80% erreicht / SOC 80% reached"}, {"t": 1490, "msg": "CV-Ladephase / CV phase started"}, {"t": 1560, "msg": "Vollladung / Full charge 100% SOC"}, {"t": 1580, "msg": "Entladephase gestartet / Discharge started"}, {"t": 1950, "msg": "Temp. Spitze 52.5\u00b0C / Peak temp. 52.5\u00b0C"}, {"t": 2295, "msg": "Pr\u00fcfende / Test completed"}],
+  };
+
+  const PHASE_STYLE = {
+    "Vorkonditionierung": { bg:"#f1f5f9", fg:"#64748b", dot:"#94a3b8" },
+    "Laden CC":           { bg:"#e6f6f9", fg:"#006f82", dot:"#0090a8" },
+    "Laden CV":           { bg:"#dcfce7", fg:"#15803d", dot:"#16a34a" },
+    "Entladen":           { bg:"#fef9c3", fg:"#a16207", dot:"#d97706" },
+  };
+
+  /* ── Chart helpers ── */
   const G = '#f1f5f9', T = '#94a3b8';
 
-  /* ── Create charts with empty data ── */
-  function makeChart(id, datasets, scales, tooltipCb) {
+  function makeChart(id, datasets, scales, pluginOpts) {
     return new Chart(document.getElementById(id).getContext('2d'), {
       type: 'line',
       data: { labels: [], datasets },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend:{display:false}, tooltip:{callbacks: tooltipCb||{}} },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend:{display:false}, tooltip:{enabled:false}, ...pluginOpts },
         scales
       }
     });
   }
 
-  const vcChart = makeChart('vcChart',
-    [{ data:[], borderColor:'#0090a8', borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, backgroundColor:'rgba(0,144,168,0.07)' }],
-    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8}, grid:{color:G} },
-      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}V`}, grid:{color:G}, min:0, max:520 } },
-    { label: c => `${c.raw} V` }
-  );
+  const vcChart = makeChart('vcChart', [
+    { data:[], borderColor:'#0090a8', borderWidth:2, pointRadius:0, tension:0.4, fill:false, yAxisID:'yV' },
+    { data:[], borderColor:'#16a34a', borderWidth:1.5, pointRadius:0, tension:0.4, fill:false, yAxisID:'yA' },
+  ], {
+    x:  { ticks:{color:T,font:{size:9},maxTicksLimit:8}, grid:{color:G} },
+    yV: { position:'left',  ticks:{color:'#0090a8',font:{size:9},callback:v=>`${v}V`}, grid:{color:G}, min:350, max:520 },
+    yA: { position:'right', ticks:{color:'#16a34a',font:{size:9},callback:v=>`${v}A`}, grid:{display:false}, min:0, max:70 },
+  });
 
-  const thChart = makeChart('thChart',
-    [
-      { data:[], label:'Inlet',  borderColor:'#d97706', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false },
-      { data:[], label:'Outlet', borderColor:'#0090a8', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false }
-    ],
-    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8}, grid:{color:G} },
-      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}°C`}, grid:{color:G}, min:47.5, max:51.5 } }
-  );
+  const thChart = makeChart('thChart', [
+    { data:[], borderColor:'#d97706', borderWidth:1.5, pointRadius:0, tension:0.4, fill:false },
+    { data:[], borderColor:'#0090a8', borderWidth:1.5, pointRadius:0, tension:0.4, fill:false },
+  ], {
+    x: { ticks:{color:T,font:{size:9},maxTicksLimit:8}, grid:{color:G} },
+    y: { ticks:{color:T,font:{size:9},callback:v=>`${v}°C`}, grid:{color:G}, min:47, max:54 },
+  });
 
-  /* Vibration is static — animate reveal on first load */
-  const vibChart = makeChart('vibChart',
-    [{ data:[], borderColor:'#dc2626', borderWidth:1.5, pointRadius:0, tension:0.2, fill:true, backgroundColor:'rgba(220,38,38,0.05)' }],
-    { x:{ ticks:{color:T,font:{size:10},maxTicksLimit:8,callback:(_,i,ticks)=>{ const v=DATA.vib.labels[i]; return i%(Math.ceil(ticks.length/6))===0?`${v}Hz`:null; }}, grid:{color:G} },
-      y:{ ticks:{color:T,font:{size:10},callback:v=>`${v}g`}, grid:{color:G}, min:0 } },
-    { title: items=>`${items[0].label} Hz`, label: c=>`${c.raw} g` }
-  );
+  const vibChart = makeChart('vibChart', [
+    { data:[], borderColor:'#dc2626', borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, backgroundColor:'rgba(220,38,38,0.05)' },
+  ], {
+    x: { ticks:{color:T,font:{size:9},maxTicksLimit:8}, grid:{color:G} },
+    y: { ticks:{color:T,font:{size:9},callback:v=>`${v.toFixed(2)}g`}, grid:{color:G}, min:0, max:0.8 },
+  });
 
-  /* ── Animation state ── */
-  let animTimer = null;
-  let step = 0;
-  const INTERVAL_MS  = 130;   // ms between points — 152pts × 130ms ≈ 20s
-  const VIB_INTERVAL = 95;    // ms between vib points — 205pts × 95ms ≈ 20s
+  /* ── State ── */
+  let step = 0, vibStep = 0, animTimer = null, vibTimer = null;
+  let maxCurr = 0;
+  const loggedEvents = new Set();
 
-  function resetCharts() {
-    vcChart.data.labels = []; vcChart.data.datasets[0].data = [];
-    thChart.data.labels = []; thChart.data.datasets[0].data = []; thChart.data.datasets[1].data = [];
-    vibChart.data.labels = []; vibChart.data.datasets[0].data = [];
-    vcChart.update('none'); thChart.update('none'); vibChart.update('none');
-    document.getElementById('volt').innerHTML = '—<span class="cunit">V</span>';
-    document.getElementById('amp').innerHTML  = '—<span class="cunit">A</span>';
-    document.getElementById('temp').innerHTML = '—<span class="cunit">°C</span>';
-    document.getElementById('soc').innerHTML  = '—<span class="cunit">%</span>';
-    document.getElementById('time-cursor').textContent = '00:00';
-    document.getElementById('elapsed-time').textContent = '—';
-    document.getElementById('status-badge').textContent = 'Läuft / Running';
-    document.getElementById('status-badge').className = 'badge ok';
-    document.getElementById('f-soc').style.width  = '0%';
-    document.getElementById('f-volt').style.width = '0%';
-    document.getElementById('f-time').style.width = '0%';
-    document.getElementById('p-soc').textContent  = '—';
-    document.getElementById('p-volt').textContent = '—';
-    document.getElementById('p-time').textContent = '—';
+  /* ── Interpolation ── */
+  function lerp(a, b, t){ return a + (b-a)*t; }
+  function smoothVal(arr, i, frac){
+    if(i >= arr.length-1) return arr[arr.length-1];
+    return lerp(arr[i], arr[i+1], frac);
   }
 
+  /* ── Reset ── */
+  function reset() {
+    step = 0; vibStep = 0; maxCurr = 0;
+    loggedEvents.clear();
+    vcChart.data.labels=[]; vcChart.data.datasets[0].data=[]; vcChart.data.datasets[1].data=[];
+    thChart.data.labels=[]; thChart.data.datasets[0].data=[]; thChart.data.datasets[1].data=[];
+    vibChart.data.labels=[]; vibChart.data.datasets[0].data=[];
+    vcChart.update('none'); thChart.update('none'); vibChart.update('none');
+    document.getElementById('log-list').innerHTML='';
+    document.getElementById('status-badge').textContent='Aktiv / Running';
+    document.getElementById('status-badge').className='badge ok';
+  }
+
+  /* ── Event log ── */
+  function addLogEvent(ts, msg) {
+    const list = document.getElementById('log-list');
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="log-time">${ts}</span><span class="log-msg">${msg}</span>`;
+    list.insertBefore(item, list.firstChild);
+    requestAnimationFrame(()=>item.classList.add('visible'));
+    // Keep only last 6
+    while(list.children.length > 6) list.removeChild(list.lastChild);
+  }
+
+  /* ── Phase update ── */
+  function updatePhase(phase) {
+    const s = PHASE_STYLE[phase] || PHASE_STYLE["Vorkonditionierung"];
+    const badge = document.getElementById('phase-badge');
+    badge.style.background = s.bg; badge.style.color = s.fg;
+    document.getElementById('phase-dot').style.background = s.dot;
+    document.getElementById('phase-label').textContent = phase;
+    document.getElementById('phase-info').textContent = phase.split(' ')[0];
+  }
+
+  /* ── Tick: one data point per interval ── */
   function tick() {
-    if (step >= TOTAL_PTS) {
-      document.getElementById('status-badge').textContent = 'Abgeschlossen / Done';
-      document.getElementById('status-badge').className = 'badge ok';
+    if(step >= N) {
+      document.getElementById('status-badge').textContent='Abgeschlossen / Done';
+      document.getElementById('status-badge').className='badge ok';
       clearInterval(animTimer);
+      clearInterval(vibTimer);
       setTimeout(startAnimation, 500);
       return;
     }
 
-    /* Voltage chart */
-    vcChart.data.labels.push(DATA.volt.labels[step]);
-    vcChart.data.datasets[0].data.push(DATA.volt.values[step]);
+    const i = step;
+    const lbl = DATA.el[i];
+    const ts  = DATA.ts[i];
+
+    /* Charts */
+    vcChart.data.labels.push(lbl);
+    vcChart.data.datasets[0].data.push(DATA.volt[i]);
+    vcChart.data.datasets[1].data.push(DATA.curr[i]);
     vcChart.update('none');
 
-    /* Temp chart */
-    const ti = Math.min(step, DATA.temp1.values.length - 1);
-    thChart.data.labels.push(DATA.temp1.labels[ti]);
-    thChart.data.datasets[0].data.push(DATA.temp1.values[ti]);
-    thChart.data.datasets[1].data.push(DATA.temp2.values[ti]);
+    thChart.data.labels.push(lbl);
+    thChart.data.datasets[0].data.push(DATA.temp_in[i]);
+    thChart.data.datasets[1].data.push(DATA.temp_out[i]);
     thChart.update('none');
 
-    /* Update KPI cards */
-    const vi = Math.min(step, DATA.volt.values.length - 1);
-    const ci = Math.min(step, DATA.curr.values.length - 1);
-    const si = Math.min(step, DATA.soc.values.length - 1);
+    /* KPI with slight interpolation toward next point */
+    const ni = Math.min(i+1, N-1);
+    const f  = 0.5; // midpoint value for realism
 
-    document.getElementById('volt').innerHTML = `${DATA.volt.values[vi].toFixed(0)}<span class="cunit">V</span>`;
-    document.getElementById('amp').innerHTML  = `${DATA.curr.values[ci].toFixed(1)}<span class="cunit">A</span>`;
-    document.getElementById('temp').innerHTML = `${DATA.temp1.values[ti].toFixed(1)}<span class="cunit">°C</span>`;
-    document.getElementById('soc').innerHTML  = `${DATA.soc.values[si].toFixed(0)}<span class="cunit">%</span>`;
-    document.getElementById('time-cursor').textContent = DATA.volt.labels[vi];
-    document.getElementById('elapsed-time').textContent = DATA.volt.labels[vi] + ' min';
+    const volt = lerp(DATA.volt[i], DATA.volt[ni], f);
+    const curr = lerp(DATA.curr[i], DATA.curr[ni], f);
+    const ti   = lerp(DATA.temp_in[i], DATA.temp_in[ni], f);
+    const to   = lerp(DATA.temp_out[i], DATA.temp_out[ni], f);
+    const soc  = lerp(DATA.soc[i], DATA.soc[ni], f);
+
+    if(curr > maxCurr) maxCurr = curr;
+
+    document.getElementById('volt').innerHTML     = `${volt.toFixed(1)}<span class="cunit">V</span>`;
+    document.getElementById('curr').innerHTML     = `${curr.toFixed(1)}<span class="cunit">A</span>`;
+    document.getElementById('temp').innerHTML     = `${ti.toFixed(2)}<span class="cunit">°C</span>`;
+    document.getElementById('temp-out').textContent = to.toFixed(2);
+    document.getElementById('soc').innerHTML      = `${soc.toFixed(1)}<span class="cunit">%</span>`;
+    document.getElementById('elapsed').textContent= lbl;
+    document.getElementById('clock').textContent  = ts;
+    document.getElementById('vctime').textContent = ts;
+    document.getElementById('thtime').textContent = ts;
+    document.getElementById('vibtime').textContent= ts;
+
+    /* Delta indicators */
+    const voltDelta = volt - 380;
+    document.getElementById('volt-delta').style.color = voltDelta >= 0 ? '#16a34a' : '#dc2626';
+    document.getElementById('volt-delta').textContent = `${voltDelta >= 0?'+':''}${voltDelta.toFixed(1)} V vs. 380V`;
+
+    const phase = DATA.phases[i];
+    const dir = phase==='Laden CC'||phase==='Laden CV' ? 'Laden / Charging' : phase==='Entladen' ? 'Entladen / Discharging' : 'Ruhezustand / Idle';
+    document.getElementById('curr-dir').textContent = dir;
+    document.getElementById('curr-max').textContent = `Max: ${maxCurr.toFixed(1)} A`;
+
+    document.getElementById('temp-delta').textContent = `ΔT: +${(ti-to).toFixed(2)} K`;
+    document.getElementById('temp-delta').style.color = (ti-to) > 2.5 ? '#d97706' : '#94a3b8';
+
+    const prevSoc = i>0 ? DATA.soc[i-1] : soc;
+    const socTrend = soc - prevSoc;
+    document.getElementById('soc-delta').style.color = socTrend >= 0 ? '#16a34a' : '#d97706';
+    document.getElementById('soc-delta').textContent = `${socTrend>=0?'↑':'↓'} ${Math.abs(socTrend).toFixed(2)} %/pt`;
 
     /* Progress bars */
-    const pct = Math.round((step / (TOTAL_PTS-1)) * 100);
-    const socPct = Math.round(DATA.soc.values[si]);
-    const voltPct = Math.round((DATA.volt.values[vi] / 500) * 100);
+    const timePct = Math.round(i/(N-1)*100);
+    document.getElementById('f-soc').style.width  = `${Math.min(100,soc).toFixed(1)}%`;
+    document.getElementById('f-volt').style.width = `${((volt-350)/170*100).toFixed(1)}%`;
+    document.getElementById('f-curr').style.width = `${(curr/70*100).toFixed(1)}%`;
+    document.getElementById('f-time').style.width = `${timePct}%`;
+    document.getElementById('p-soc').textContent  = `${soc.toFixed(1)} %`;
+    document.getElementById('p-volt').textContent = `${volt.toFixed(1)} V`;
+    document.getElementById('p-curr').textContent = `${curr.toFixed(1)} A`;
+    document.getElementById('p-time').textContent = `${timePct} %`;
 
-    document.getElementById('f-soc').style.width  = socPct + '%';
-    document.getElementById('f-volt').style.width = voltPct + '%';
-    document.getElementById('f-time').style.width = pct + '%';
-    document.getElementById('p-soc').textContent  = socPct + ' %';
-    document.getElementById('p-volt').textContent = DATA.volt.values[vi].toFixed(0) + ' V';
-    document.getElementById('p-time').textContent = pct + ' %';
+    updatePhase(phase);
+
+    /* Events */
+    const elapsed_s = i * (TOTAL_S/(N-1));
+    DATA.events.forEach(ev => {
+      if(!loggedEvents.has(ev.t) && elapsed_s >= ev.t) {
+        loggedEvents.add(ev.t);
+        addLogEvent(ts, ev.msg);
+      }
+    });
 
     step++;
   }
 
-  /* Vibration reveal (faster, independent) */
-  function animateVib() {
-    let vi = 0;
-    const VIB_TOTAL = DATA.vib.labels.length;
-    const t = setInterval(() => {
-      if (vi >= VIB_TOTAL) { clearInterval(t); return; }
-      vibChart.data.labels.push(DATA.vib.labels[vi]);
-      vibChart.data.datasets[0].data.push(DATA.vib.values[vi]);
-      vibChart.update('none');
-      vi++;
-    }, VIB_INTERVAL);
+  /* ── Vibration: independent faster loop ── */
+  function vibTick() {
+    if(vibStep >= VIB_N) { vibStep=0; vibChart.data.labels=[]; vibChart.data.datasets[0].data=[]; }
+    vibChart.data.labels.push(DATA.vib_el[vibStep]);
+    vibChart.data.datasets[0].data.push(DATA.vib[vibStep]);
+    vibChart.update('none');
+    vibStep++;
   }
 
+  /* ── Start ── */
   function startAnimation() {
-    if (animTimer) clearInterval(animTimer);
-    resetCharts();
-    step = 0;
-    setTimeout(animateVib, 300);
-    animTimer = setInterval(tick, INTERVAL_MS);
+    if(animTimer) clearInterval(animTimer);
+    if(vibTimer)  clearInterval(vibTimer);
+    reset();
+    const MS = Math.round(60000 / N);        // ~300ms per pt → 60s total
+    const VMS = Math.round(60000 / VIB_N);   // ~400ms per vib pt
+    animTimer = setInterval(tick, MS);
+    setTimeout(()=>{ vibTimer = setInterval(vibTick, VMS); }, 200);
   }
 
-  /* Auto-start on load */
-  window.addEventListener('load', () => setTimeout(startAnimation, 400));
+  window.addEventListener('load', ()=>setTimeout(startAnimation, 300));
 </script>
 </body>
 </html>
